@@ -5,10 +5,25 @@ import os
 import pandas as pd
 import numpy as np
 from PIL import Image, ImageOps
+import google.generativeai as genai
 
-# --- CARGAR IA / INFERENCIA LIGERA ---
+# --- CONFIGURACIÓN DE GEMINI IA ---
+# Lee la API Key desde st.secrets o variable de entorno
+api_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY"))
+
+if api_key:
+    genai.configure(api_key=api_key)
+    # Inicializamos el modelo enfocado en agronomía
+    model_chat = genai.GenerativeModel('gemini-1.5-flash', system_instruction="""
+    Eres AGRO IA, un experto agrónomo virtual especializado en cultivos agrícolas, gestión de plagas y enfermedades.
+    Responde de forma concisa, educada y práctica para agricultores y productores.
+    Si te preguntan sobre temas ajenos a la agricultura o agronomía, amablemente orienta la conversación de regreso al campo.
+    """)
+else:
+    model_chat = None
+
+# --- CARGAR IA / INFERENCIA LIGERA TFLITE ---
 TFLITE_DISPONIBLE = False
-
 try:
     from ai_edge_litert.interpreter import Interpreter
     TFLITE_DISPONIBLE = True
@@ -26,17 +41,15 @@ except ImportError:
 # Configuración inicial de la página
 st.set_page_config(page_title="AGRO IA - Detección de Plagas", page_icon="🌱", layout="wide")
 
-# --- ESTILOS CSS PERSONALIZADOS (ESTILO VERDE AGRO IA) ---
+# --- ESTILOS CSS PERSONALIZADOS ---
 st.markdown("""
     <style>
-    /* Estilo del panel lateral (Sidebar Verde) */
     [data-testid="stSidebar"] {
         background-color: #1e3a2b !important;
     }
     [data-testid="stSidebar"] * {
         color: #e0f2e9 !important;
     }
-    /* Estilo para los botones principales (Rojo/Verde) */
     div.stButton > button:first-child {
         background-color: #e63946;
         color: white;
@@ -57,7 +70,6 @@ DB_NAME = "agroia_v3.db"
 def init_db():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,7 +80,6 @@ def init_db():
             rol TEXT DEFAULT 'Agricultor / Productor'
         )
     ''')
-    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS historial (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -111,7 +122,6 @@ def autenticar_usuario(identificador, password):
         identificador_clean = identificador.strip().lower()
         pass_hash = hash_password(password)
         
-        # Buscar usuario o correo
         cursor.execute("""
             SELECT id, usuario, correo, password, nombre_completo, rol FROM usuarios 
             WHERE usuario = ? OR correo = ?
@@ -123,7 +133,6 @@ def autenticar_usuario(identificador, password):
         if not user:
             return None, "El usuario o correo no existe."
         
-        # Verificar contraseña
         if user[3] == pass_hash:
             return user, "OK"
         else:
@@ -139,8 +148,10 @@ if "usuario" not in st.session_state:
     st.session_state.usuario = ""
 if "nombre_completo" not in st.session_state:
     st.session_state.nombre_completo = ""
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-# --- PANTALLA DE AUTENTICACIÓN (LOGIN Y REGISTRO) ---
+# --- PANTALLA DE AUTENTICACIÓN ---
 if not st.session_state.autenticado:
     col1, col2, col3 = st.columns([1, 2, 1])
     
@@ -193,7 +204,7 @@ if not st.session_state.autenticado:
                 else:
                     st.warning("Por favor completa todos los campos.")
 
-# --- INTERFAZ PRINCIPAL CON MENÚ LATERAL VERDE ---
+# --- INTERFAZ PRINCIPAL ---
 else:
     st.sidebar.markdown("# 🌱 AGRO IA")
     st.sidebar.caption("Detección Inteligente de Plagas")
@@ -201,7 +212,7 @@ else:
     
     opcion = st.sidebar.radio(
         "Navegación",
-        ["🏠 Inicio", "📷 Detectar Plaga", "📜 Registro Histórico", "💡 Catálogo y Tratamientos", "👤 Mi Perfil"]
+        ["🏠 Inicio", "📷 Detectar Plaga", "💬 Asistente Virtual", "📜 Registro Histórico", "💡 Catálogo y Tratamientos", "👤 Mi Perfil"]
     )
     
     st.sidebar.write("---")
@@ -214,9 +225,9 @@ else:
         st.session_state.autenticado = False
         st.session_state.usuario = ""
         st.session_state.nombre_completo = ""
+        st.session_state.messages = []
         st.rerun()
 
-    # --- LÓGICA DE PROCESAMIENTO IA ---
     @st.cache_data
     def cargar_labels():
         try:
@@ -261,10 +272,10 @@ else:
             
         return diagnostico, confianza
 
-    # --- VISTAS DEL SISTEMA ---
+    # --- VISTAS ---
     if "Inicio" in opcion:
         st.title(f"Bienvenido a Agro IA, {st.session_state.nombre_completo} 🌱")
-        st.write("Selecciona **Detectar Plaga** en el menú lateral para iniciar un escaneo.")
+        st.write("Selecciona **Detectar Plaga** en el menú lateral para iniciar un escaneo o **Asistente Virtual** para hacer consultas.")
 
     elif "Detectar Plaga" in opcion:
         st.title("📷 Escáner y Detección de Plagas")
@@ -310,9 +321,36 @@ else:
             else:
                 st.info("Sube o toma una fotografía para ver los resultados.")
 
+    # --- NUEVA SECCIÓN: ASISTENTE VIRTUAL DE CONSULTAS ---
+    elif "Asistente Virtual" in opcion:
+        st.title("💬 Asistente Agrónomo Virtual")
+        st.write("Hazle preguntas sobre tratamientos, dosis de fertilizantes, cuidados de tu cultivo o cómo combatir plagas.")
+
+        if not model_chat:
+            st.warning("⚠️ La API Key de Gemini no está configurada en los Secrets de Streamlit. Por favor configúrala para habilitar el chat.")
+        else:
+            # Mostrar mensajes anteriores
+            for message in st.session_state.messages:
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
+
+            # Entrada del usuario
+            if prompt := st.chat_input("Escribe tu duda agrícola aquí (ej. ¿Cómo combatir la Roya del café de forma orgánica?):"):
+                st.session_state.messages.append({"role": "user", "content": prompt})
+                with st.chat_message("user"):
+                    st.markdown(prompt)
+
+                with st.chat_message("assistant"):
+                    with st.spinner("Pensando respuesta agrícola..."):
+                        try:
+                            response = model_chat.generate_content(prompt)
+                            st.markdown(response.text)
+                            st.session_state.messages.append({"role": "assistant", "content": response.text})
+                        except Exception as e:
+                            st.error(f"Error al conectar con el asistente: {e}")
+
     elif "Registro Histórico" in opcion:
         st.title("📜 Registro Histórico")
-        st.write("Historial de escaneos guardados:")
         try:
             conn = sqlite3.connect(DB_NAME)
             df = pd.read_sql_query("SELECT cultivo, diagnostico, confianza, fecha FROM historial WHERE usuario = ? ORDER BY fecha DESC", conn, params=(st.session_state.usuario,))
