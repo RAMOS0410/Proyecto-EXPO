@@ -58,15 +58,18 @@ def init_db():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     
+    # Comprobar si la columna 'correo' existe en la tabla de usuarios
     try:
-        cursor.execute("SELECT usuario FROM usuarios LIMIT 1")
+        cursor.execute("SELECT correo FROM usuarios LIMIT 1")
     except sqlite3.OperationalError:
+        # Reconstruir la tabla para asegurar que contenga la columna 'correo'
         cursor.execute("DROP TABLE IF EXISTS usuarios")
     
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             usuario TEXT UNIQUE NOT NULL,
+            correo TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
             nombre_completo TEXT,
             rol TEXT DEFAULT 'Agricultor / Productor'
@@ -91,26 +94,33 @@ init_db()
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-def registrar_usuario(usuario, password, nombre):
+def registrar_usuario(usuario, correo, password, nombre):
     try:
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO usuarios (usuario, password, nombre_completo) VALUES (?, ?, ?)",
-                       (usuario, hash_password(password), nombre))
+        cursor.execute("INSERT INTO usuarios (usuario, correo, password, nombre_completo) VALUES (?, ?, ?, ?)",
+                       (usuario.strip().lower(), correo.strip().lower(), hash_password(password), nombre))
         conn.commit()
         conn.close()
         return True, "¡Usuario registrado exitosamente! Ya puedes iniciar sesión."
-    except sqlite3.IntegrityError:
+    except sqlite3.IntegrityError as e:
+        err_msg = str(e).lower()
+        if "correo" in err_msg:
+            return False, "El correo electrónico ya está registrado."
         return False, "El nombre de usuario ya existe."
     except Exception as e:
         return False, f"Error: {e}"
 
-def autenticar_usuario(usuario, password):
+def autenticar_usuario(identificador, password):
     try:
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM usuarios WHERE usuario = ? AND password = ?", 
-                       (usuario, hash_password(password)))
+        # Permite iniciar sesión consultando por usuario O por correo
+        identificador_clean = identificador.strip().lower()
+        cursor.execute("""
+            SELECT * FROM usuarios 
+            WHERE (LOWER(usuario) = ? OR LOWER(correo) = ?) AND password = ?
+        """, (identificador_clean, identificador_clean, hash_password(password)))
         user = cursor.fetchone()
         conn.close()
         return user
@@ -138,7 +148,7 @@ if not st.session_state.autenticado:
         
         with tab1:
             st.subheader("Ingreso al Sistema")
-            user_input = st.text_input("Usuario / Correo", key="login_u")
+            user_input = st.text_input("Usuario o Correo Electrónico", key="login_u")
             pass_input = st.text_input("Contraseña", type="password", key="login_p")
             
             if st.button("Iniciar Sesión", use_container_width=True):
@@ -146,12 +156,13 @@ if not st.session_state.autenticado:
                     user = autenticar_usuario(user_input, pass_input)
                     if user:
                         st.session_state.autenticado = True
-                        st.session_state.usuario = user[1]
-                        st.session_state.nombre_completo = user[3] if len(user) > 3 and user[3] else user[1]
+                        st.session_state.usuario = user[1] # nombre de usuario
+                        # user[4] corresponde a nombre_completo
+                        st.session_state.nombre_completo = user[4] if len(user) > 4 and user[4] else user[1]
                         st.success("¡Bienvenido!")
                         st.rerun()
                     else:
-                        st.error("Usuario o contraseña incorrectos.")
+                        st.error("Usuario/Correo o contraseña incorrectos.")
                 else:
                     st.warning("Por favor completa todos los campos.")
                     
@@ -159,15 +170,18 @@ if not st.session_state.autenticado:
             st.subheader("Crear una nueva cuenta")
             new_nombre = st.text_input("Nombre Completo", key="reg_n")
             new_user = st.text_input("Nombre de Usuario", key="reg_u")
+            new_email = st.text_input("Correo Electrónico", key="reg_e")
             new_pass = st.text_input("Contraseña", type="password", key="reg_p")
             new_pass2 = st.text_input("Confirmar Contraseña", type="password", key="reg_p2")
             
             if st.button("Registrar Cuenta", use_container_width=True):
-                if new_user and new_pass and new_nombre:
-                    if new_pass != new_pass2:
+                if new_user and new_email and new_pass and new_nombre:
+                    if "@" not in new_email or "." not in new_email:
+                        st.error("Por favor ingresa un correo electrónico válido.")
+                    elif new_pass != new_pass2:
                         st.error("Las contraseñas no coinciden.")
                     else:
-                        exito, msj = registrar_usuario(new_user, new_pass, new_nombre)
+                        exito, msj = registrar_usuario(new_user, new_email, new_pass, new_nombre)
                         if exito:
                             st.success(msj)
                         else:
