@@ -24,6 +24,27 @@ except ImportError:
 
 st.set_page_config(page_title="Agro IA", page_icon="🌱", layout="wide")
 
+# --- INICIALIZAR BASE DE DATOS Y TABLA DE USUARIOS ---
+def init_db():
+    try:
+        conn = sqlite3.connect("agroia_db.db")
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                usuario TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                rol TEXT DEFAULT 'Agricultor / Productor',
+                finca TEXT DEFAULT 'Finca Central'
+            )
+        """)
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+init_db()
+
 # --- CONTROL DE SESIÓN ---
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
@@ -31,8 +52,20 @@ if "usuario" not in st.session_state:
     st.session_state.usuario = ""
 
 # --- FUNCIONES DE BASE DE DATOS Y UTILIDADES ---
+def registrar_usuario(usuario, password):
+    try:
+        conn = sqlite3.connect("agroia_db.db")
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO usuarios (usuario, password) VALUES (?, ?)", (usuario, password))
+        conn.commit()
+        conn.close()
+        return True, "¡Usuario registrado con éxito! Ahora puedes iniciar sesión."
+    except sqlite3.IntegrityError:
+        return False, "El nombre de usuario ya existe. Intenta con otro."
+    except Exception as e:
+        return False, f"Error al registrar usuario: {e}"
+
 def verificar_usuario(usuario, password):
-    # Conexión rápida a SQLite
     try:
         conn = sqlite3.connect("agroia_db.db")
         cursor = conn.cursor()
@@ -41,9 +74,8 @@ def verificar_usuario(usuario, password):
         conn.close()
         return user
     except Exception:
-        # Fallback de prueba rápida si la tabla usuarios no existe en el local
         if usuario.lower() in ["reinaldo", "admin"] and password == "1234":
-            return (1, usuario, "Agricultor / Productor", "Finca Central")
+            return (1, usuario, "1234", "Agricultor / Productor", "Finca Central")
         return None
 
 @st.cache_data
@@ -92,25 +124,52 @@ def analizar_imagen(image):
         
     return etiqueta, confianza
 
-# --- PANTALLA DE LOGIN ---
+# --- PANTALLA DE ACCESO (LOGIN / REGISTRO) ---
 if not st.session_state.autenticado:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.markdown("<h1 style='text-align: center;'>🌱 Agro IA</h1>", unsafe_allow_html=True)
-        st.markdown("<h3 style='text-align: center;'>Inicio de Sesión</h3>", unsafe_allow_html=True)
         st.write("---")
         
-        usuario_input = st.text_input("👤 Usuario / Correo")
-        password_input = st.text_input("🔑 Contraseña", type="password")
+        tab1, tab2 = st.tabs(["🔑 Iniciar Sesión", "📝 Registrarse"])
         
-        if st.button("Ingresar", use_container_width=True):
-            user_data = verificar_usuario(usuario_input, password_input)
-            if user_data:
-                st.session_state.autenticado = True
-                st.session_state.usuario = usuario_input
-                st.rerun()
-            else:
-                st.error("Usuario o contraseña incorrectos.")
+        # Pestaña 1: Iniciar Sesión
+        with tab1:
+            st.subheader("Iniciar Sesión")
+            usuario_input = st.text_input("👤 Usuario / Correo", key="login_user")
+            password_input = st.text_input("🔑 Contraseña", type="password", key="login_pass")
+            
+            if st.button("Ingresar", use_container_width=True):
+                if usuario_input and password_input:
+                    user_data = verificar_usuario(usuario_input, password_input)
+                    if user_data:
+                        st.session_state.autenticado = True
+                        st.session_state.usuario = usuario_input
+                        st.rerun()
+                    else:
+                        st.error("Usuario o contraseña incorrectos.")
+                else:
+                    st.warning("Por favor, llena todos los campos.")
+                    
+        # Pestaña 2: Registrarse
+        with tab2:
+            st.subheader("Crear Cuenta Nueva")
+            new_user = st.text_input("👤 Elige un Nombre de Usuario", key="reg_user")
+            new_pass = st.text_input("🔑 Crea una Contraseña", type="password", key="reg_pass")
+            new_pass_confirm = st.text_input("🔑 Confirma la Contraseña", type="password", key="reg_pass_confirm")
+            
+            if st.button("Registrar Cuenta", use_container_width=True):
+                if new_user and new_pass and new_pass_confirm:
+                    if new_pass != new_pass_confirm:
+                        st.error("Las contraseñas no coinciden.")
+                    else:
+                        exito, mensaje = registrar_usuario(new_user, new_pass)
+                        if exito:
+                            st.success(mensaje)
+                        else:
+                            st.error(mensaje)
+                else:
+                    st.warning("Por favor, completa todos los campos para el registro.")
 
 # --- PANTALLA PRINCIPAL (SISTEMA) ---
 else:
