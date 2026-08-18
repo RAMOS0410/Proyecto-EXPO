@@ -26,6 +26,31 @@ except ImportError:
 # Configuración inicial de la página
 st.set_page_config(page_title="AGRO IA - Detección de Plagas", page_icon="🌱", layout="wide")
 
+# --- ESTILOS CSS PERSONALIZADOS (ESTILO VERDE AGRO IA) ---
+st.markdown("""
+    <style>
+    /* Estilo del panel lateral (Sidebar Verde) */
+    [data-testid="stSidebar"] {
+        background-color: #1e3a2b !important;
+    }
+    [data-testid="stSidebar"] * {
+        color: #e0f2e9 !important;
+    }
+    /* Estilo para los botones principales (Rojo/Verde) */
+    div.stButton > button:first-child {
+        background-color: #e63946;
+        color: white;
+        border-radius: 8px;
+        border: none;
+        font-weight: bold;
+    }
+    div.stButton > button:first-child:hover {
+        background-color: #d62839;
+        color: white;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 DB_NAME = "agroia_db.db"
 
 # --- INICIALIZACIÓN Y REPARACIÓN AUTOMÁTICA DE BASE DE DATOS ---
@@ -33,12 +58,9 @@ def init_db():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     
-    # Verificar si la columna 'usuario' existe en la tabla actual
     try:
         cursor.execute("SELECT usuario FROM usuarios LIMIT 1")
     except sqlite3.OperationalError:
-        # Si da error, significa que la tabla vieja no tiene la columna 'usuario'
-        # Reconstruimos la tabla con el formato correcto
         cursor.execute("DROP TABLE IF EXISTS usuarios")
     
     cursor.execute('''
@@ -109,7 +131,7 @@ if not st.session_state.autenticado:
     
     with col2:
         st.markdown("<h1 style='text-align: center;'>🌱 AGRO IA</h1>", unsafe_allow_html=True)
-        st.markdown("<h4 style='text-align: center; color: gray;'>Sistema Inteligente de Detección de Plagas</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='text-align: center; color: #a3b18a;'>Sistema Inteligente de Detección de Plagas</h4>", unsafe_allow_html=True)
         st.write("---")
         
         tab1, tab2 = st.tabs(["🔑 Iniciar Sesión", "📝 Registrarse"])
@@ -119,7 +141,7 @@ if not st.session_state.autenticado:
             user_input = st.text_input("Usuario / Correo", key="login_u")
             pass_input = st.text_input("Contraseña", type="password", key="login_p")
             
-            if st.button("Iniciar Sesión", use_container_width=True, type="primary"):
+            if st.button("Iniciar Sesión", use_container_width=True):
                 if user_input and pass_input:
                     user = autenticar_usuario(user_input, pass_input)
                     if user:
@@ -153,9 +175,9 @@ if not st.session_state.autenticado:
                 else:
                     st.warning("Por favor completa todos los campos.")
 
-# --- INTERFAZ PRINCIPAL CON MENÚ LATERAL ---
+# --- INTERFAZ PRINCIPAL CON MENÚ LATERAL VERDE ---
 else:
-    st.sidebar.title("🌱 AGRO IA")
+    st.sidebar.markdown("# 🌱 AGRO IA")
     st.sidebar.caption("Detección Inteligente de Plagas")
     st.sidebar.write("---")
     
@@ -198,7 +220,6 @@ else:
         input_details = interpreter.get_input_details()
         output_details = interpreter.get_output_details()
         
-        # Preprocesar imagen
         size = (224, 224)
         image_resized = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
         image_array = np.asarray(image_resized, dtype=np.float32)
@@ -250,7 +271,7 @@ else:
         with col2:
             st.subheader("🔍 Diagnóstico de la IA")
             if imagen_file is not None:
-                if st.button("🚀 Analizar Foto con IA", use_container_width=True, type="primary"):
+                if st.button("📌 Analizar Foto con IA", use_container_width=True):
                     with st.spinner("Procesando imagen con la IA..."):
                         try:
                             diagnostico, confianza = procesar_e_inferir(img)
