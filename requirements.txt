@@ -1,0 +1,5 @@
+streamlit
+numpy
+Pillow
+pandas
+tflite-runtime
