@@ -1,5 +1,5 @@
 streamlit
 numpy
-Pillow
+pillow
 pandas
-ai-edge-litert
+google-genai

@@ -5,22 +5,16 @@ import os
 import pandas as pd
 import numpy as np
 from PIL import Image, ImageOps
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
-# --- CONFIGURACIÓN DE GEMINI IA ---
-# Lee la API Key desde st.secrets o variable de entorno
+# --- CONFIGURACIÓN DE GEMINI IA (NUEVO SDK) ---
 api_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY"))
 
 if api_key:
-    genai.configure(api_key=api_key)
-    # Inicializamos el modelo enfocado en agronomía
-    model_chat = genai.GenerativeModel('gemini-1.5-flash', system_instruction="""
-    Eres AGRO IA, un experto agrónomo virtual especializado en cultivos agrícolas, gestión de plagas y enfermedades.
-    Responde de forma concisa, educada y práctica para agricultores y productores.
-    Si te preguntan sobre temas ajenos a la agricultura o agronomía, amablemente orienta la conversación de regreso al campo.
-    """)
+    client = genai.Client(api_key=api_key)
 else:
-    model_chat = None
+    client = None
 
 # --- CARGAR IA / INFERENCIA LIGERA TFLITE ---
 TFLITE_DISPONIBLE = False
@@ -321,21 +315,21 @@ else:
             else:
                 st.info("Sube o toma una fotografía para ver los resultados.")
 
-    # --- NUEVA SECCIÓN: ASISTENTE VIRTUAL DE CONSULTAS ---
+    # --- VISTA: ASISTENTE VIRTUAL DE CONSULTAS ---
     elif "Asistente Virtual" in opcion:
         st.title("💬 Asistente Agrónomo Virtual")
         st.write("Hazle preguntas sobre tratamientos, dosis de fertilizantes, cuidados de tu cultivo o cómo combatir plagas.")
 
-        if not model_chat:
+        if not client:
             st.warning("⚠️ La API Key de Gemini no está configurada en los Secrets de Streamlit. Por favor configúrala para habilitar el chat.")
         else:
-            # Mostrar mensajes anteriores
+            # Mostrar historial de conversación
             for message in st.session_state.messages:
                 with st.chat_message(message["role"]):
                     st.markdown(message["content"])
 
-            # Entrada del usuario
-            if prompt := st.chat_input("Escribe tu duda agrícola aquí (ej. ¿Cómo combatir la Roya del café de forma orgánica?):"):
+            # Pregunta del usuario
+            if prompt := st.chat_input("Escribe tu duda agrícola aquí (ej. ¿Cómo abonar mi planta de frijol?):"):
                 st.session_state.messages.append({"role": "user", "content": prompt})
                 with st.chat_message("user"):
                     st.markdown(prompt)
@@ -343,7 +337,17 @@ else:
                 with st.chat_message("assistant"):
                     with st.spinner("Pensando respuesta agrícola..."):
                         try:
-                            response = model_chat.generate_content(prompt)
+                            response = client.models.generate_content(
+                                model='gemini-2.5-flash',
+                                contents=prompt,
+                                config=types.GenerateContentConfig(
+                                    system_instruction="""
+                                    Eres AGRO IA, un experto agrónomo virtual especializado en agricultura, fertilización y plagas.
+                                    Responde de manera clara, educada, concisa y práctica para agricultores.
+                                    Si te hacen preguntas no relacionadas con la agricultura o ganadería, amablemente orienta al usuario hacia temas del campo.
+                                    """
+                                )
+                            )
                             st.markdown(response.text)
                             st.session_state.messages.append({"role": "assistant", "content": response.text})
                         except Exception as e:
