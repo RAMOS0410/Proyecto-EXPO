@@ -8,7 +8,7 @@ from PIL import Image, ImageOps
 from google import genai
 from google.genai import types
 
-# --- CONFIGURACIÓN DE GEMINI IA (NUEVO SDK) ---
+# --- CONFIGURACIÓN DE GEMINI IA ---
 api_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY"))
 
 if api_key:
@@ -338,8 +338,7 @@ else:
                     with st.spinner("Pensando respuesta agrícola..."):
                         try:
                             response = client.models.generate_content(
-                              response = client.models.generate_content(
-                                model='gemini-3.6-flash',
+                                model='gemini-2.5-flash',
                                 contents=prompt,
                                 config=types.GenerateContentConfig(
                                     system_instruction="""
@@ -347,8 +346,6 @@ else:
                                     Responde de manera clara, educada, concisa y práctica para agricultores.
                                     Si te hacen preguntas no relacionadas con la agricultura o ganadería, amablemente orienta al usuario hacia temas del campo.
                                     """
-                                )
-                            )
                                 )
                             )
                             st.markdown(response.text)
