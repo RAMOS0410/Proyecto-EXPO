@@ -338,7 +338,8 @@ else:
                     with st.spinner("Pensando respuesta agrícola..."):
                         try:
                             response = client.models.generate_content(
-                                model='gemini-2.5-flash',
+                              response = client.models.generate_content(
+                                model='gemini-3.6-flash',
                                 contents=prompt,
                                 config=types.GenerateContentConfig(
                                     system_instruction="""
@@ -346,6 +347,8 @@ else:
                                     Responde de manera clara, educada, concisa y práctica para agricultores.
                                     Si te hacen preguntas no relacionadas con la agricultura o ganadería, amablemente orienta al usuario hacia temas del campo.
                                     """
+                                )
+                            )
                                 )
                             )
                             st.markdown(response.text)
