@@ -51,19 +51,16 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-DB_NAME = "agroia_db.db"
+DB_NAME = "agroia_v3.db"
 
 # --- INICIALIZACIÓN Y REPARACIÓN AUTOMÁTICA DE BASE DE DATOS ---
 def init_db():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     
-    # Comprobar si la columna 'correo' existe en la tabla de usuarios
-    try:
-        cursor.execute("SELECT correo FROM usuarios LIMIT 1")
-    except sqlite3.OperationalError:
-        # Reconstruir la tabla para asegurar que contenga la columna 'correo'
-        cursor.execute("DROP TABLE IF EXISTS usuarios")
+    # Forzar la recreación si la estructura no coincide
+    cursor.execute("DROP TABLE IF EXISTS usuarios")
+    cursor.execute("DROP TABLE IF EXISTS historial")
     
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS usuarios (
@@ -115,7 +112,6 @@ def autenticar_usuario(identificador, password):
     try:
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
-        # Permite iniciar sesión consultando por usuario O por correo
         identificador_clean = identificador.strip().lower()
         cursor.execute("""
             SELECT * FROM usuarios 
@@ -156,8 +152,7 @@ if not st.session_state.autenticado:
                     user = autenticar_usuario(user_input, pass_input)
                     if user:
                         st.session_state.autenticado = True
-                        st.session_state.usuario = user[1] # nombre de usuario
-                        # user[4] corresponde a nombre_completo
+                        st.session_state.usuario = user[1]
                         st.session_state.nombre_completo = user[4] if len(user) > 4 and user[4] else user[1]
                         st.success("¡Bienvenido!")
                         st.rerun()
