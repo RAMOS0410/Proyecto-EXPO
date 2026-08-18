@@ -26,12 +26,21 @@ except ImportError:
 # Configuración inicial de la página
 st.set_page_config(page_title="AGRO IA - Detección de Plagas", page_icon="🌱", layout="wide")
 
-# Inicialización de la Base de Datos SQLite
 DB_NAME = "agroia_db.db"
 
+# --- INICIALIZACIÓN Y REPARACIÓN AUTOMÁTICA DE BASE DE DATOS ---
 def init_db():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
+    
+    # Verificar si la columna 'usuario' existe en la tabla actual
+    try:
+        cursor.execute("SELECT usuario FROM usuarios LIMIT 1")
+    except sqlite3.OperationalError:
+        # Si da error, significa que la tabla vieja no tiene la columna 'usuario'
+        # Reconstruimos la tabla con el formato correcto
+        cursor.execute("DROP TABLE IF EXISTS usuarios")
+    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,6 +50,7 @@ def init_db():
             rol TEXT DEFAULT 'Agricultor / Productor'
         )
     ''')
+    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS historial (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -74,13 +84,16 @@ def registrar_usuario(usuario, password, nombre):
         return False, f"Error: {e}"
 
 def autenticar_usuario(usuario, password):
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM usuarios WHERE usuario = ? AND password = ?", 
-                   (usuario, hash_password(password)))
-    user = cursor.fetchone()
-    conn.close()
-    return user
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM usuarios WHERE usuario = ? AND password = ?", 
+                       (usuario, hash_password(password)))
+        user = cursor.fetchone()
+        conn.close()
+        return user
+    except Exception:
+        return None
 
 # Estado de la sesión
 if "autenticado" not in st.session_state:
@@ -140,14 +153,12 @@ if not st.session_state.autenticado:
                 else:
                     st.warning("Por favor completa todos los campos.")
 
-# --- INTERFAZ PRINCIPAL CON MENÚ LATERAL ORIGINAL ---
+# --- INTERFAZ PRINCIPAL CON MENÚ LATERAL ---
 else:
-    # Sidebar / Menú Lateral
     st.sidebar.title("🌱 AGRO IA")
     st.sidebar.caption("Detección Inteligente de Plagas")
     st.sidebar.write("---")
     
-    # Navegación del Panel Lateral
     opcion = st.sidebar.radio(
         "Navegación",
         ["🏠 Inicio", "📷 Detectar Plaga", "📜 Registro Histórico", "💡 Catálogo y Tratamientos", "👤 Mi Perfil"]
@@ -246,7 +257,6 @@ else:
                             st.success(f"**Diagnóstico:** {diagnostico}")
                             st.info(f"**Confianza:** {confianza * 100:.2f}%")
                             
-                            # Guardar en Historial
                             try:
                                 conn = sqlite3.connect(DB_NAME)
                                 cursor = conn.cursor()
