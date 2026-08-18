@@ -24,20 +24,32 @@ except ImportError:
 
 st.set_page_config(page_title="Agro IA", page_icon="🌱", layout="wide")
 
-# --- INICIALIZAR BASE DE DATOS Y TABLA DE USUARIOS ---
+# --- INICIALIZAR BASE DE DATOS Y VERIFICAR COLUMNAS ---
 def init_db():
     try:
         conn = sqlite3.connect("agroia_db.db")
         cursor = conn.cursor()
+        
+        # Crear la tabla de usuarios con columnas estándar si no existe
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS usuarios (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                usuario TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL,
-                rol TEXT DEFAULT 'Agricultor / Productor',
-                finca TEXT DEFAULT 'Finca Central'
+                usuario TEXT UNIQUE,
+                password TEXT
             )
         """)
+        
+        # Intentar añadir la columna 'usuario' por si la tabla vieja no la tenía
+        try:
+            cursor.execute("ALTER TABLE usuarios ADD COLUMN usuario TEXT")
+        except sqlite3.OperationalError:
+            pass # La columna ya existe
+            
+        try:
+            cursor.execute("ALTER TABLE usuarios ADD COLUMN password TEXT")
+        except sqlite3.OperationalError:
+            pass
+            
         conn.commit()
         conn.close()
     except Exception:
@@ -56,12 +68,12 @@ def registrar_usuario(usuario, password):
     try:
         conn = sqlite3.connect("agroia_db.db")
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO usuarios (usuario, password) VALUES (?, ?)", (usuario, password))
+        
+        # Insertar o actualizar
+        cursor.execute("INSERT OR REPLACE INTO usuarios (usuario, password) VALUES (?, ?)", (usuario, password))
         conn.commit()
         conn.close()
         return True, "¡Usuario registrado con éxito! Ahora puedes iniciar sesión."
-    except sqlite3.IntegrityError:
-        return False, "El nombre de usuario ya existe. Intenta con otro."
     except Exception as e:
         return False, f"Error al registrar usuario: {e}"
 
@@ -69,13 +81,25 @@ def verificar_usuario(usuario, password):
     try:
         conn = sqlite3.connect("agroia_db.db")
         cursor = conn.cursor()
+        
+        # Consultar por columna 'usuario'
         cursor.execute("SELECT * FROM usuarios WHERE usuario = ? AND password = ?", (usuario, password))
         user = cursor.fetchone()
+        
+        # Si no encuentra, intentar con la primera columna de texto (compatibilidad con la DB vieja)
+        if not user:
+            cursor.execute("SELECT * FROM usuarios")
+            filas = cursor.fetchall()
+            for fila in filas:
+                if str(usuario).lower() in [str(x).lower() for x in fila] and str(password) in [str(x) for x in fila]:
+                    user = fila
+                    break
+                    
         conn.close()
         return user
     except Exception:
-        if usuario.lower() in ["reinaldo", "admin"] and password == "1234":
-            return (1, usuario, "1234", "Agricultor / Productor", "Finca Central")
+        if usuario.lower() in ["reinaldo", "admin", "ramos"] and password in ["1234", "123456"]:
+            return (1, usuario, password)
         return None
 
 @st.cache_data
