@@ -1,11 +1,12 @@
 import streamlit as st
-import numpy as np
 import sqlite3
+import hashlib
+import os
 import pandas as pd
+import numpy as np
 from PIL import Image, ImageOps
-from datetime import datetime
 
-# Cargar el motor de inferencia ligero (ai-edge-litert)
+# --- CARGAR IA / INFERENCIA LIGERA ---
 TFLITE_DISPONIBLE = False
 
 try:
@@ -22,202 +23,198 @@ except ImportError:
         except ImportError:
             TFLITE_DISPONIBLE = False
 
-st.set_page_config(page_title="Agro IA", page_icon="🌱", layout="wide")
+# Configuración inicial de la página
+st.set_page_config(page_title="AGRO IA - Detección de Plagas", page_icon="🌱", layout="wide")
 
-# --- INICIALIZAR BASE DE DATOS Y VERIFICAR COLUMNAS ---
+# Inicialización de la Base de Datos SQLite
+DB_NAME = "agroia_db.db"
+
 def init_db():
-    try:
-        conn = sqlite3.connect("agroia_db.db")
-        cursor = conn.cursor()
-        
-        # Crear la tabla de usuarios con columnas estándar si no existe
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS usuarios (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                usuario TEXT UNIQUE,
-                password TEXT
-            )
-        """)
-        
-        # Intentar añadir la columna 'usuario' por si la tabla vieja no la tenía
-        try:
-            cursor.execute("ALTER TABLE usuarios ADD COLUMN usuario TEXT")
-        except sqlite3.OperationalError:
-            pass # La columna ya existe
-            
-        try:
-            cursor.execute("ALTER TABLE usuarios ADD COLUMN password TEXT")
-        except sqlite3.OperationalError:
-            pass
-            
-        conn.commit()
-        conn.close()
-    except Exception:
-        pass
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            nombre_completo TEXT,
+            rol TEXT DEFAULT 'Agricultor / Productor'
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS historial (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario TEXT,
+            cultivo TEXT,
+            diagnostico TEXT,
+            confianza REAL,
+            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
 init_db()
 
-# --- CONTROL DE SESIÓN ---
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def registrar_usuario(usuario, password, nombre):
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO usuarios (usuario, password, nombre_completo) VALUES (?, ?, ?)",
+                       (usuario, hash_password(password), nombre))
+        conn.commit()
+        conn.close()
+        return True, "¡Usuario registrado exitosamente! Ya puedes iniciar sesión."
+    except sqlite3.IntegrityError:
+        return False, "El nombre de usuario ya existe."
+    except Exception as e:
+        return False, f"Error: {e}"
+
+def autenticar_usuario(usuario, password):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM usuarios WHERE usuario = ? AND password = ?", 
+                   (usuario, hash_password(password)))
+    user = cursor.fetchone()
+    conn.close()
+    return user
+
+# Estado de la sesión
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
 if "usuario" not in st.session_state:
     st.session_state.usuario = ""
+if "nombre_completo" not in st.session_state:
+    st.session_state.nombre_completo = ""
 
-# --- FUNCIONES DE BASE DE DATOS Y UTILIDADES ---
-def registrar_usuario(usuario, password):
-    try:
-        conn = sqlite3.connect("agroia_db.db")
-        cursor = conn.cursor()
-        
-        # Insertar o actualizar
-        cursor.execute("INSERT OR REPLACE INTO usuarios (usuario, password) VALUES (?, ?)", (usuario, password))
-        conn.commit()
-        conn.close()
-        return True, "¡Usuario registrado con éxito! Ahora puedes iniciar sesión."
-    except Exception as e:
-        return False, f"Error al registrar usuario: {e}"
-
-def verificar_usuario(usuario, password):
-    try:
-        conn = sqlite3.connect("agroia_db.db")
-        cursor = conn.cursor()
-        
-        # Consultar por columna 'usuario'
-        cursor.execute("SELECT * FROM usuarios WHERE usuario = ? AND password = ?", (usuario, password))
-        user = cursor.fetchone()
-        
-        # Si no encuentra, intentar con la primera columna de texto (compatibilidad con la DB vieja)
-        if not user:
-            cursor.execute("SELECT * FROM usuarios")
-            filas = cursor.fetchall()
-            for fila in filas:
-                if str(usuario).lower() in [str(x).lower() for x in fila] and str(password) in [str(x) for x in fila]:
-                    user = fila
-                    break
-                    
-        conn.close()
-        return user
-    except Exception:
-        if usuario.lower() in ["reinaldo", "admin", "ramos"] and password in ["1234", "123456"]:
-            return (1, usuario, password)
-        return None
-
-@st.cache_data
-def cargar_etiquetas():
-    try:
-        with open("labels.txt", "r", encoding="utf-8") as f:
-            labels = [line.strip() for line in f.readlines()]
-        return labels
-    except Exception:
-        return []
-
-def preparar_imagen(image):
-    size = (224, 224)
-    image_resized = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
-    image_array = np.asarray(image_resized, dtype=np.float32)
-    normalized_image_array = (image_array / 127.5) - 1.0
-    data = np.expand_dims(normalized_image_array, axis=0)
-    return data
-
-def analizar_imagen(image):
-    if not TFLITE_DISPONIBLE:
-        raise Exception("No se encontró ningún motor de TFLite instalado.")
-    
-    try:
-        interpreter = Interpreter(model_path="model_unquant.tflite")
-    except NameError:
-        interpreter = tflite.Interpreter(model_path="model_unquant.tflite")
-        
-    interpreter.allocate_tensors()
-    
-    input_details = interpreter.get_input_details()
-    output_details = interpreter.get_output_details()
-    
-    data = preparar_imagen(image)
-    interpreter.set_tensor(input_details[0]['index'], data)
-    interpreter.invoke()
-    
-    prediction = interpreter.get_tensor(output_details[0]['index'])[0]
-    labels = cargar_etiquetas()
-    index_max = np.argmax(prediction)
-    confianza = float(prediction[index_max])
-    
-    etiqueta = labels[index_max] if labels else f"Clase {index_max}"
-    if " " in etiqueta:
-        etiqueta = etiqueta.split(" ", 1)[1]
-        
-    return etiqueta, confianza
-
-# --- PANTALLA DE ACCESO (LOGIN / REGISTRO) ---
+# --- PANTALLA DE AUTENTICACIÓN (LOGIN Y REGISTRO) ---
 if not st.session_state.autenticado:
     col1, col2, col3 = st.columns([1, 2, 1])
+    
     with col2:
-        st.markdown("<h1 style='text-align: center;'>🌱 Agro IA</h1>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center;'>🌱 AGRO IA</h1>", unsafe_allow_html=True)
+        st.markdown("<h4 style='text-align: center; color: gray;'>Sistema Inteligente de Detección de Plagas</h4>", unsafe_allow_html=True)
         st.write("---")
         
         tab1, tab2 = st.tabs(["🔑 Iniciar Sesión", "📝 Registrarse"])
         
-        # Pestaña 1: Iniciar Sesión
         with tab1:
-            st.subheader("Iniciar Sesión")
-            usuario_input = st.text_input("👤 Usuario / Correo", key="login_user")
-            password_input = st.text_input("🔑 Contraseña", type="password", key="login_pass")
+            st.subheader("Ingreso al Sistema")
+            user_input = st.text_input("Usuario / Correo", key="login_u")
+            pass_input = st.text_input("Contraseña", type="password", key="login_p")
             
-            if st.button("Ingresar", use_container_width=True):
-                if usuario_input and password_input:
-                    user_data = verificar_usuario(usuario_input, password_input)
-                    if user_data:
+            if st.button("Iniciar Sesión", use_container_width=True, type="primary"):
+                if user_input and pass_input:
+                    user = autenticar_usuario(user_input, pass_input)
+                    if user:
                         st.session_state.autenticado = True
-                        st.session_state.usuario = usuario_input
+                        st.session_state.usuario = user[1]
+                        st.session_state.nombre_completo = user[3] if len(user) > 3 and user[3] else user[1]
+                        st.success("¡Bienvenido!")
                         st.rerun()
                     else:
                         st.error("Usuario o contraseña incorrectos.")
                 else:
-                    st.warning("Por favor, llena todos los campos.")
+                    st.warning("Por favor completa todos los campos.")
                     
-        # Pestaña 2: Registrarse
         with tab2:
-            st.subheader("Crear Cuenta Nueva")
-            new_user = st.text_input("👤 Elige un Nombre de Usuario", key="reg_user")
-            new_pass = st.text_input("🔑 Crea una Contraseña", type="password", key="reg_pass")
-            new_pass_confirm = st.text_input("🔑 Confirma la Contraseña", type="password", key="reg_pass_confirm")
+            st.subheader("Crear una nueva cuenta")
+            new_nombre = st.text_input("Nombre Completo", key="reg_n")
+            new_user = st.text_input("Nombre de Usuario", key="reg_u")
+            new_pass = st.text_input("Contraseña", type="password", key="reg_p")
+            new_pass2 = st.text_input("Confirmar Contraseña", type="password", key="reg_p2")
             
             if st.button("Registrar Cuenta", use_container_width=True):
-                if new_user and new_pass and new_pass_confirm:
-                    if new_pass != new_pass_confirm:
+                if new_user and new_pass and new_nombre:
+                    if new_pass != new_pass2:
                         st.error("Las contraseñas no coinciden.")
                     else:
-                        exito, mensaje = registrar_usuario(new_user, new_pass)
+                        exito, msj = registrar_usuario(new_user, new_pass, new_nombre)
                         if exito:
-                            st.success(mensaje)
+                            st.success(msj)
                         else:
-                            st.error(mensaje)
+                            st.error(msj)
                 else:
-                    st.warning("Por favor, completa todos los campos para el registro.")
+                    st.warning("Por favor completa todos los campos.")
 
-# --- PANTALLA PRINCIPAL (SISTEMA) ---
+# --- INTERFAZ PRINCIPAL CON MENÚ LATERAL ORIGINAL ---
 else:
+    # Sidebar / Menú Lateral
     st.sidebar.title("🌱 AGRO IA")
     st.sidebar.caption("Detección Inteligente de Plagas")
-    st.sidebar.write(f"👤 **Usuario:** {st.session_state.usuario}")
-    st.sidebar.write("🌾 **Rol:** Agricultor / Productor")
-    st.sidebar.write("📍 **Finca:** Finca Central")
     st.sidebar.write("---")
-
+    
+    # Navegación del Panel Lateral
     opcion = st.sidebar.radio(
         "Navegación",
         ["🏠 Inicio", "📷 Detectar Plaga", "📜 Registro Histórico", "💡 Catálogo y Tratamientos", "👤 Mi Perfil"]
     )
-
+    
+    st.sidebar.write("---")
+    st.sidebar.markdown(f"👤 **Usuario:** {st.session_state.nombre_completo}")
+    st.sidebar.markdown("Rol: Agricultor / Productor")
+    st.sidebar.markdown("📍 Finca Central")
+    st.sidebar.write("")
+    
     if st.sidebar.button("🚪 Cerrar Sesión", use_container_width=True):
         st.session_state.autenticado = False
         st.session_state.usuario = ""
+        st.session_state.nombre_completo = ""
         st.rerun()
 
-    # --- NAVEGACIÓN ---
+    # --- LÓGICA DE PROCESAMIENTO IA ---
+    @st.cache_data
+    def cargar_labels():
+        try:
+            with open("labels.txt", "r", encoding="utf-8") as f:
+                return [line.strip() for line in f.readlines()]
+        except Exception:
+            return []
+
+    def procesar_e_inferir(image):
+        if not TFLITE_DISPONIBLE:
+            raise Exception("No hay un motor TFLite configurado.")
+            
+        try:
+            interpreter = Interpreter(model_path="model_unquant.tflite")
+        except NameError:
+            interpreter = tflite.Interpreter(model_path="model_unquant.tflite")
+            
+        interpreter.allocate_tensors()
+        input_details = interpreter.get_input_details()
+        output_details = interpreter.get_output_details()
+        
+        # Preprocesar imagen
+        size = (224, 224)
+        image_resized = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
+        image_array = np.asarray(image_resized, dtype=np.float32)
+        normalized_image_array = (image_array / 127.5) - 1.0
+        data = np.expand_dims(normalized_image_array, axis=0)
+        
+        interpreter.set_tensor(input_details[0]['index'], data)
+        interpreter.invoke()
+        
+        predictions = interpreter.get_tensor(output_details[0]['index'])[0]
+        max_idx = np.argmax(predictions)
+        confianza = float(predictions[max_idx])
+        
+        labels = cargar_labels()
+        if labels and max_idx < len(labels):
+            diagnostico = labels[max_idx]
+            if " " in diagnostico:
+                diagnostico = diagnostico.split(" ", 1)[1]
+        else:
+            diagnostico = f"Clase {max_idx}"
+            
+        return diagnostico, confianza
+
+    # --- VISTAS DEL SISTEMA ---
     if "Inicio" in opcion:
-        st.title(f"Bienvenido de nuevo, {st.session_state.usuario} 👋")
-        st.write("Selecciona **Detectar Plaga** en el menú de la izquierda para analizar tus cultivos.")
+        st.title(f"Bienvenido a Agro IA, {st.session_state.nombre_completo} 🌱")
+        st.write("Selecciona **Detectar Plaga** en el menú lateral para iniciar un escaneo.")
 
     elif "Detectar Plaga" in opcion:
         st.title("📷 Escáner y Detección de Plagas")
@@ -227,62 +224,63 @@ else:
 
         with col1:
             origen = st.radio("Selecciona origen de la imagen:", ["Subir Archivo", "Usar Cámara"])
-            cultivo = st.selectbox("Selecciona el tipo de cultivo:", ["Frijol", "Café", "Maíz", "Tomate", "Otro"])
+            cultivo = st.selectbox("Selecciona el tipo de cultivo:", ["Café", "Frijol", "Maíz", "Tomate", "Otro"])
             
-            imagen_subida = None
+            imagen_file = None
             if origen == "Subir Archivo":
-                imagen_subida = st.file_uploader("Formatos soportados: JPG, PNG", type=["jpg", "jpeg", "png"])
+                imagen_file = st.file_uploader("Formatos soportados: JPG, PNG", type=["jpg", "png", "jpeg"])
             else:
-                imagen_subida = st.camera_input("Toma una foto")
+                imagen_file = st.camera_input("Toma una foto")
 
-            if imagen_subida is not None:
-                image = Image.open(imagen_subida).convert("RGB")
-                st.image(image, caption="Imagen seleccionada", use_container_width=True)
+            if imagen_file is not None:
+                img = Image.open(imagen_file).convert("RGB")
+                st.image(img, caption="Imagen seleccionada", use_container_width=True)
 
         with col2:
             st.subheader("🔍 Diagnóstico de la IA")
-            if imagen_subida is not None:
-                if st.button("🚀 Analizar Foto con IA", use_container_width=True):
-                    with st.spinner("Analizando la imagen..."):
+            if imagen_file is not None:
+                if st.button("🚀 Analizar Foto con IA", use_container_width=True, type="primary"):
+                    with st.spinner("Procesando imagen con la IA..."):
                         try:
-                            diagnostico, confianza = analizar_imagen(image)
+                            diagnostico, confianza = procesar_e_inferir(img)
+                            st.success(f"**Diagnóstico:** {diagnostico}")
+                            st.info(f"**Confianza:** {confianza * 100:.2f}%")
                             
-                            st.success(f"**Resultado:** {diagnostico}")
-                            st.info(f"**Nivel de confianza:** {confianza * 100:.2f}%")
-                            
+                            # Guardar en Historial
                             try:
-                                conn = sqlite3.connect("agroia_db.db")
+                                conn = sqlite3.connect(DB_NAME)
                                 cursor = conn.cursor()
-                                fecha_actual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                                cursor.execute(
-                                    "INSERT INTO historial (fecha, cultivo, diagnostico, confianza) VALUES (?, ?, ?, ?)",
-                                    (fecha_actual, cultivo, diagnostico, round(confianza * 100, 2))
-                                )
+                                cursor.execute("INSERT INTO historial (usuario, cultivo, diagnostico, confianza) VALUES (?, ?, ?, ?)",
+                                               (st.session_state.usuario, cultivo, diagnostico, round(confianza * 100, 2)))
                                 conn.commit()
                                 conn.close()
                             except Exception:
                                 pass
-                                
                         except Exception as e:
                             st.error(f"Error al analizar la imagen: {e}")
             else:
-                st.info("Sube o captura una imagen para ver el diagnóstico.")
+                st.info("Sube o toma una fotografía para ver los resultados.")
 
     elif "Registro Histórico" in opcion:
-        st.title("📜 Registro Histórico de Escaneos")
+        st.title("📜 Registro Histórico")
+        st.write("Historial de escaneos guardados:")
         try:
-            conn = sqlite3.connect("agroia_db.db")
-            df = pd.read_sql_query("SELECT * FROM historial ORDER BY fecha DESC", conn)
+            conn = sqlite3.connect(DB_NAME)
+            df = pd.read_sql_query("SELECT cultivo, diagnostico, confianza, fecha FROM historial WHERE usuario = ? ORDER BY fecha DESC", conn, params=(st.session_state.usuario,))
             conn.close()
-            st.dataframe(df, use_container_width=True)
+            if not df.empty:
+                st.dataframe(df, use_container_width=True)
+            else:
+                st.info("Aún no tienes escaneos registrados.")
         except Exception:
-            st.warning("Aún no hay registros en la base de datos o la tabla no existe.")
+            st.info("No hay registros en el historial.")
 
     elif "Catálogo y Tratamientos" in opcion:
         st.title("💡 Catálogo y Tratamientos")
-        st.write("Consulta el catálogo de plagas y recomendaciones agronómicas.")
+        st.write("Consulta recomendaciones sobre el cuidado de cultivos y tratamiento de plagas.")
 
     elif "Mi Perfil" in opcion:
         st.title("👤 Mi Perfil")
-        st.write(f"**Usuario registrado:** {st.session_state.usuario}")
+        st.write(f"**Nombre:** {st.session_state.nombre_completo}")
+        st.write(f"**Usuario:** {st.session_state.usuario}")
         st.write("**Rol:** Agricultor / Productor")
