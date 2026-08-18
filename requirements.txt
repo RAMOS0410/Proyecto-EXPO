@@ -2,4 +2,4 @@ streamlit
 numpy
 Pillow
 pandas
-tflite-runtime
+ai-edge-litert
