@@ -53,14 +53,10 @@ st.markdown("""
 
 DB_NAME = "agroia_v3.db"
 
-# --- INICIALIZACIÓN Y REPARACIÓN AUTOMÁTICA DE BASE DE DATOS ---
+# --- INICIALIZACIÓN DE LA BASE DE DATOS ---
 def init_db():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    
-    # Forzar la recreación si la estructura no coincide
-    cursor.execute("DROP TABLE IF EXISTS usuarios")
-    cursor.execute("DROP TABLE IF EXISTS historial")
     
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS usuarios (
@@ -113,15 +109,28 @@ def autenticar_usuario(identificador, password):
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
         identificador_clean = identificador.strip().lower()
+        pass_hash = hash_password(password)
+        
+        # Buscar usuario o correo
         cursor.execute("""
-            SELECT * FROM usuarios 
-            WHERE (LOWER(usuario) = ? OR LOWER(correo) = ?) AND password = ?
-        """, (identificador_clean, identificador_clean, hash_password(password)))
+            SELECT id, usuario, correo, password, nombre_completo, rol FROM usuarios 
+            WHERE usuario = ? OR correo = ?
+        """, (identificador_clean, identificador_clean))
+        
         user = cursor.fetchone()
         conn.close()
-        return user
-    except Exception:
-        return None
+        
+        if not user:
+            return None, "El usuario o correo no existe."
+        
+        # Verificar contraseña
+        if user[3] == pass_hash:
+            return user, "OK"
+        else:
+            return None, "Contraseña incorrecta."
+            
+    except Exception as e:
+        return None, f"Error en BD: {e}"
 
 # Estado de la sesión
 if "autenticado" not in st.session_state:
@@ -149,7 +158,7 @@ if not st.session_state.autenticado:
             
             if st.button("Iniciar Sesión", use_container_width=True):
                 if user_input and pass_input:
-                    user = autenticar_usuario(user_input, pass_input)
+                    user, msj = autenticar_usuario(user_input, pass_input)
                     if user:
                         st.session_state.autenticado = True
                         st.session_state.usuario = user[1]
@@ -157,7 +166,7 @@ if not st.session_state.autenticado:
                         st.success("¡Bienvenido!")
                         st.rerun()
                     else:
-                        st.error("Usuario/Correo o contraseña incorrectos.")
+                        st.error(msj)
                 else:
                     st.warning("Por favor completa todos los campos.")
                     
