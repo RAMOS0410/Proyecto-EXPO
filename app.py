@@ -8,15 +8,197 @@ from PIL import Image, ImageOps
 from google import genai
 from google.genai import types
 
+# --- CONFIGURACIÓN DE PÁGINA ---
+st.set_page_config(
+    page_title="AGRO IA - Detección de Plagas", 
+    page_icon="🌱", 
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# --- ESTILOS CSS PERSONALIZADOS (MODO CLARO Y OSCURO + PALETA AGRO IA) ---
+st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* VARIABLES DE COLOR */
+    :root {
+        --bg-main: #f4f6f3;
+        --card-bg: #ffffff;
+        --card-border: #e2e8e0;
+        --text-title: #344E41;
+        --text-body: #2d3748;
+        --text-muted: #6c757d;
+        --sidebar-bg: #344E41;
+        --sidebar-text: #f0f4f1;
+        --primary-btn: #3A5A40;
+        --primary-btn-hover: #588157;
+        --input-bg: #ffffff;
+        --input-text: #2d3748;
+        --input-border: #dad7cd;
+    }
+
+    /* SOPORTE PARA MODO OSCURO (PREFERS-COLOR-SCHEME & STREAMLIT DARK) */
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg-main: #121815;
+            --card-bg: #1e2621;
+            --card-border: #2d3831;
+            --text-title: #e2ece9;
+            --text-body: #d1d5db;
+            --text-muted: #9ca3af;
+            --sidebar-bg: #1a2820;
+            --sidebar-text: #f0f4f1;
+            --primary-btn: #3A5A40;
+            --primary-btn-hover: #588157;
+            --input-bg: #27332c;
+            --input-text: #f3f4f6;
+            --input-border: #3b4d42;
+        }
+    }
+
+    /* Fondo general */
+    .stApp {
+        background-color: var(--bg-main) !important;
+    }
+
+    /* Sidebar Lateral */
+    [data-testid="stSidebar"] {
+        background-color: var(--sidebar-bg) !important;
+        padding-top: 1rem;
+    }
+    
+    [data-testid="stSidebar"] * {
+        color: var(--sidebar-text) !important;
+    }
+
+    /* Transición en menú de navegación */
+    [data-testid="stSidebar"] .stRadio label {
+        padding: 10px 14px;
+        border-radius: 10px;
+        transition: background 0.2s ease;
+    }
+    
+    [data-testid="stSidebar"] .stRadio label:hover {
+        background-color: #3a5a40 !important;
+    }
+
+    /* Títulos y Encabezados */
+    h1, h2, h3, h4 {
+        color: var(--text-title) !important;
+        font-weight: 700 !important;
+    }
+
+    p, span, label {
+        color: var(--text-body);
+    }
+
+    /* Tarjetas/Contenedores tipo App */
+    div[data-testid="stVerticalBlock"] > div > div[data-testid="stVerticalBlock"] {
+        background-color: var(--card-bg) !important;
+        border-radius: 16px !important;
+        padding: 22px !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+        border: 1px solid var(--card-border) !important;
+        margin-bottom: 15px !important;
+    }
+
+    /* Botones de la aplicación */
+    div.stButton > button {
+        background-color: var(--primary-btn) !important;
+        color: #ffffff !important;
+        border-radius: 12px !important;
+        border: none !important;
+        font-weight: 600 !important;
+        padding: 0.65rem 1.4rem !important;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        transition: all 0.3s ease !important;
+    }
+
+    div.stButton > button:hover {
+        background-color: var(--primary-btn-hover) !important;
+        color: #ffffff !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    /* Inputs de texto y selectores */
+    .stTextInput input, .stSelectbox > div > div {
+        background-color: var(--input-bg) !important;
+        color: var(--input-text) !important;
+        border-radius: 10px !important;
+        border: 1px solid var(--input-border) !important;
+    }
+
+    .stTextInput input:focus {
+        border-color: var(--primary-btn) !important;
+    }
+
+    /* Insignias de Estado / Riesgo (Badges) */
+    .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-align: center;
+    }
+    .badge-high { background-color: #fee2e2; color: #991b1b; }
+    .badge-medium { background-color: #fef3c7; color: #92400e; }
+    .badge-low { background-color: #e0e7ff; color: #3730a3; }
+    .badge-good { background-color: #d1fae5; color: #065f46; }
+
+    /* Estilo de Tarjeta de Resumen */
+    .metric-card {
+        background-color: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 16px;
+        padding: 18px;
+        text-align: center;
+    }
+    .metric-card h3 {
+        margin: 0;
+        font-size: 1.8rem;
+        color: #3A5A40 !important;
+    }
+    .metric-card p {
+        margin: 4px 0 0 0;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+    }
+
+    /* Pestañas (Tabs) */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        height: 44px;
+        background-color: var(--card-bg);
+        border-radius: 10px;
+        color: var(--text-body);
+        font-weight: 600;
+        padding: 0 18px;
+        border: 1px solid var(--card-border);
+    }
+
+    .stTabs [aria-selected="true"] {
+        background-color: var(--primary-btn) !important;
+        color: #ffffff !important;
+        border-color: var(--primary-btn) !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # --- CONFIGURACIÓN DE GEMINI IA ---
 api_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY"))
+client = genai.Client(api_key=api_key) if api_key else None
 
-if api_key:
-    client = genai.Client(api_key=api_key)
-else:
-    client = None
-
-# --- CARGAR IA / INFERENCIA LIGERA TFLITE ---
+# --- INFERENCIA TFLITE ---
 TFLITE_DISPONIBLE = False
 try:
     from ai_edge_litert.interpreter import Interpreter
@@ -32,40 +214,8 @@ except ImportError:
         except ImportError:
             TFLITE_DISPONIBLE = False
 
-# Configuración inicial de la página
-st.set_page_config(page_title="AGRO IA - Detección de Plagas", page_icon="🌱", layout="wide")
-
-# Directorio para almacenar notas de voz
-AUDIO_FOLDER = "audios_chat"
-if not os.path.exists(AUDIO_FOLDER):
-    os.makedirs(AUDIO_FOLDER)
-
-# --- ESTILOS CSS PERSONALIZADOS ---
-st.markdown("""
-    <style>
-    [data-testid="stSidebar"] {
-        background-color: #1e3a2b !important;
-    }
-    [data-testid="stSidebar"] * {
-        color: #e0f2e9 !important;
-    }
-    div.stButton > button:first-child {
-        background-color: #e63946;
-        color: white;
-        border-radius: 8px;
-        border: none;
-        font-weight: bold;
-    }
-    div.stButton > button:first-child:hover {
-        background-color: #d62839;
-        color: white;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
 DB_NAME = "agroia_v3.db"
 
-# --- INICIALIZACIÓN DE LA BASE DE DATOS ---
 def init_db():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
@@ -89,67 +239,10 @@ def init_db():
             fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS chats (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            usuario TEXT NOT NULL,
-            role TEXT NOT NULL,
-            content TEXT,
-            audio_path TEXT,
-            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
     conn.commit()
     conn.close()
 
 init_db()
-
-# --- FUNCIONES DE BASE DE DATOS PARA CHAT ---
-def guardar_mensaje_bd(usuario, role, content, audio_path=None):
-    try:
-        conn = sqlite3.connect(DB_NAME)
-        cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO chats (usuario, role, content, audio_path) VALUES (?, ?, ?, ?)",
-            (usuario, role, content, audio_path)
-        )
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        st.error(f"Error al guardar mensaje en BD: {e}")
-
-def obtener_historial_chat_bd(usuario):
-    try:
-        conn = sqlite3.connect(DB_NAME)
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT role, content, audio_path FROM chats WHERE usuario = ? ORDER BY fecha ASC",
-            (usuario,)
-        )
-        filas = cursor.fetchall()
-        conn.close()
-        historial = []
-        for role, content, audio_path in filas:
-            historial.append({
-                "role": role,
-                "content": content,
-                "audio_path": audio_path
-            })
-        return historial
-    except Exception:
-        return []
-
-def borrar_historial_chat_bd(usuario):
-    try:
-        conn = sqlite3.connect(DB_NAME)
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM chats WHERE usuario = ?", (usuario,))
-        conn.commit()
-        conn.close()
-        return True
-    except Exception as e:
-        st.error(f"Error al borrar el historial: {e}")
-        return False
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
@@ -188,7 +281,6 @@ def autenticar_usuario(identificador, password):
         
         if not user:
             return None, "El usuario o correo no existe."
-        
         if user[3] == pass_hash:
             return user, "OK"
         else:
@@ -197,29 +289,30 @@ def autenticar_usuario(identificador, password):
     except Exception as e:
         return None, f"Error en BD: {e}"
 
-# Estado de la sesión
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
 if "usuario" not in st.session_state:
     st.session_state.usuario = ""
 if "nombre_completo" not in st.session_state:
     st.session_state.nombre_completo = ""
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
 # --- PANTALLA DE AUTENTICACIÓN ---
 if not st.session_state.autenticado:
     col1, col2, col3 = st.columns([1, 2, 1])
     
     with col2:
-        st.markdown("<h1 style='text-align: center;'>🌱 AGRO IA</h1>", unsafe_allow_html=True)
-        st.markdown("<h4 style='text-align: center; color: #a3b18a;'>Sistema Inteligente de Detección de Plagas</h4>", unsafe_allow_html=True)
-        st.write("---")
+        st.markdown("<h1 style='text-align: center; margin-bottom: 0px;'>🌱 AGRO IA</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; font-weight: 500; margin-bottom: 25px;'>Inteligencia Artificial para el cuidado de tus cultivos</p>", unsafe_allow_html=True)
         
-        tab1, tab2 = st.tabs(["🔑 Iniciar Sesión", "📝 Registrarse"])
+        tab1, tab2 = st.tabs(["Iniciar Sesión", "Registrarse"])
         
         with tab1:
-            st.subheader("Ingreso al Sistema")
+            st.write("")
             user_input = st.text_input("Usuario o Correo Electrónico", key="login_u")
             pass_input = st.text_input("Contraseña", type="password", key="login_p")
+            st.write("")
             
             if st.button("Iniciar Sesión", use_container_width=True):
                 if user_input and pass_input:
@@ -228,7 +321,7 @@ if not st.session_state.autenticado:
                         st.session_state.autenticado = True
                         st.session_state.usuario = user[1]
                         st.session_state.nombre_completo = user[4] if len(user) > 4 and user[4] else user[1]
-                        st.success("¡Bienvenido!")
+                        st.success("¡Bienvenido de nuevo!")
                         st.rerun()
                     else:
                         st.error(msj)
@@ -236,12 +329,13 @@ if not st.session_state.autenticado:
                     st.warning("Por favor completa todos los campos.")
                     
         with tab2:
-            st.subheader("Crear una nueva cuenta")
+            st.write("")
             new_nombre = st.text_input("Nombre Completo", key="reg_n")
             new_user = st.text_input("Nombre de Usuario", key="reg_u")
             new_email = st.text_input("Correo Electrónico", key="reg_e")
             new_pass = st.text_input("Contraseña", type="password", key="reg_p")
             new_pass2 = st.text_input("Confirmar Contraseña", type="password", key="reg_p2")
+            st.write("")
             
             if st.button("Registrar Cuenta", use_container_width=True):
                 if new_user and new_email and new_pass and new_nombre:
@@ -261,24 +355,24 @@ if not st.session_state.autenticado:
 # --- INTERFAZ PRINCIPAL ---
 else:
     st.sidebar.markdown("# 🌱 AGRO IA")
-    st.sidebar.caption("Detección Inteligente de Plagas")
+    st.sidebar.caption("Monitoreo Inteligente de Cultivos")
     st.sidebar.write("---")
     
     opcion = st.sidebar.radio(
         "Navegación",
-        ["🏠 Inicio", "📷 Detectar Plaga", "💬 Asistente Virtual", "📜 Registro Histórico", "💡 Catálogo y Tratamientos", "👤 Mi Perfil"]
+        ["Inicio", "Detectar Plaga", "Asistente Virtual", "Historial", "Catálogo y Tratamientos", "Mi Perfil"]
     )
     
     st.sidebar.write("---")
-    st.sidebar.markdown(f"👤 **Usuario:** {st.session_state.nombre_completo}")
-    st.sidebar.markdown("Rol: Agricultor / Productor")
-    st.sidebar.markdown("📍 Finca Central")
+    st.sidebar.markdown(f"**Usuario:** {st.session_state.nombre_completo}")
+    st.sidebar.markdown("**Rol:** Agricultor")
     st.sidebar.write("")
     
-    if st.sidebar.button("🚪 Cerrar Sesión", use_container_width=True):
+    if st.sidebar.button("Cerrar Sesión", use_container_width=True):
         st.session_state.autenticado = False
         st.session_state.usuario = ""
         st.session_state.nombre_completo = ""
+        st.session_state.messages = []
         st.rerun()
 
     @st.cache_data
@@ -291,7 +385,7 @@ else:
 
     def procesar_e_inferir(image):
         if not TFLITE_DISPONIBLE:
-            raise Exception("No hay un motor TFLite configurado.")
+            raise Exception("No hay un motor TFLite configurado en el servidor.")
             
         try:
             interpreter = Interpreter(model_path="model_unquant.tflite")
@@ -325,158 +419,176 @@ else:
             
         return diagnostico, confianza
 
-    # --- VISTAS ---
+    # --- VISTA: INICIO ---
     if "Inicio" in opcion:
-        st.title(f"Bienvenido a Agro IA, {st.session_state.nombre_completo} 🌱")
-        st.write("Selecciona **Detectar Plaga** en el menú lateral para iniciar un escaneo o **Asistente Virtual** para hacer consultas.")
+        st.title(f"¡Hola, {st.session_state.nombre_completo}! 👋")
+        st.write("Este es el estado de tus cultivos hoy.")
+        
+        # Tarjetas resumen estilizadas
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.markdown("""
+            <div class="metric-card">
+                <span class="badge badge-good">Óptimo</span>
+                <h3>Todo va bien</h3>
+                <p>3 cultivos monitoreados</p>
+            </div>
+            """, unsafe_allow_html=True)
+        with c2:
+            st.markdown("""
+            <div class="metric-card">
+                <span class="badge badge-low">Normal</span>
+                <h3>0 Alertas</h3>
+                <p>Sin plagas activas</p>
+            </div>
+            """, unsafe_allow_html=True)
+        with c3:
+            st.markdown("""
+            <div class="metric-card">
+                <span class="badge badge-good">28°C</span>
+                <h3>Clima Estable</h3>
+                <p>Humedad del suelo: 72%</p>
+            </div>
+            """, unsafe_allow_html=True)
 
+        st.write("---")
+        st.subheader("🌾 Cultivos Registrados")
+        
+        col_c1, col_c2, col_c3 = st.columns(3)
+        with col_c1:
+            st.markdown("**🌽 Maíz**")
+            st.markdown("Salud: <span class='badge badge-good'>Buena</span>", unsafe_allow_html=True)
+        with col_c2:
+            st.markdown("**🫘 Frijol**")
+            st.markdown("Salud: <span class='badge badge-medium'>Regular</span>", unsafe_allow_html=True)
+        with col_c3:
+            st.markdown("**☕ Café**")
+            st.markdown("Salud: <span class='badge badge-good'>Buena</span>", unsafe_allow_html=True)
+
+    # --- VISTA: DETECTAR PLAGA ---
     elif "Detectar Plaga" in opcion:
-        st.title("📷 Escáner y Detección de Plagas")
-        st.write("Captura una foto de la hoja o sube una imagen existente.")
+        st.title("Nuevo Diagnóstico")
+        st.write("Toma una foto o sube una imagen de tu cultivo para identificar posibles plagas.")
 
         col1, col2 = st.columns([1, 1])
 
         with col1:
-            origen = st.radio("Selecciona origen de la imagen:", ["Subir Archivo", "Usar Cámara"])
-            cultivo = st.selectbox("Selecciona el tipo de cultivo:", ["Café", "Frijol", "Maíz", "Tomate", "Otro"])
+            st.subheader("📷 Captura de Imagen")
+            origen = st.radio("Origen de la imagen:", ["Subir Imagen", "Tomar Foto"])
+            cultivo = st.selectbox("Selecciona el cultivo:", ["Café", "Frijol", "Maíz", "Tomate", "Otro"])
             
             imagen_file = None
-            if origen == "Subir Archivo":
-                imagen_file = st.file_uploader("Formatos soportados: JPG, PNG", type=["jpg", "png", "jpeg"])
+            if origen == "Subir Imagen":
+                imagen_file = st.file_uploader("Formatos permitidos: JPG, PNG", type=["jpg", "png", "jpeg"])
             else:
-                imagen_file = st.camera_input("Toma una foto")
+                imagen_file = st.camera_input("Capturar foto del cultivo")
 
             if imagen_file is not None:
                 img = Image.open(imagen_file).convert("RGB")
-                st.image(img, caption="Imagen seleccionada", use_container_width=True)
+                st.image(img, caption="Vista previa de la muestra", use_container_width=True)
 
         with col2:
-            st.subheader("🔍 Diagnóstico de la IA")
+            st.subheader("📋 Resultado del Análisis")
             if imagen_file is not None:
-                if st.button("📌 Analizar Foto con IA", use_container_width=True):
-                    with st.spinner("Procesando imagen con la IA..."):
+                if st.button("Analizar Hoja con IA", use_container_width=True):
+                    with st.spinner("Procesando imagen..."):
                         try:
                             diagnostico, confianza = procesar_e_inferir(img)
-                            st.success(f"**Diagnóstico:** {diagnostico}")
-                            st.info(f"**Confianza:** {confianza * 100:.2f}%")
+                            confianza_pct = round(confianza * 100, 2)
+                            
+                            es_sana = "sana" in diagnostico.lower() or "healthy" in diagnostico.lower()
+                            badge_html = "<span class='badge badge-good'>Saludable</span>" if es_sana else "<span class='badge badge-high'>Riesgo: Alto</span>"
+                            
+                            st.markdown(f"### {diagnostico} {badge_html}", unsafe_allow_html=True)
+                            st.markdown(f"**Cultivo:** {cultivo}")
+                            st.progress(confianza, text=f"Confianza del modelo: {confianza_pct}%")
+                            
+                            if es_sana:
+                                st.success("La planta muestra signos de estar saludable.")
+                            else:
+                                st.warning("Recomendación: Aplicar tratamiento enfocado y mantener buena ventilación entre plantas.")
                             
                             try:
                                 conn = sqlite3.connect(DB_NAME)
                                 cursor = conn.cursor()
                                 cursor.execute("INSERT INTO historial (usuario, cultivo, diagnostico, confianza) VALUES (?, ?, ?, ?)",
-                                               (st.session_state.usuario, cultivo, diagnostico, round(confianza * 100, 2)))
+                                               (st.session_state.usuario, cultivo, diagnostico, confianza_pct))
                                 conn.commit()
                                 conn.close()
                             except Exception:
                                 pass
                         except Exception as e:
-                            st.error(f"Error al analizar la imagen: {e}")
+                            st.error(f"Error durante el análisis: {e}")
             else:
-                st.info("Sube o toma una fotografía para ver los resultados.")
+                st.info("Sube o toma una foto en el panel izquierdo para obtener el diagnóstico.")
 
     # --- VISTA: ASISTENTE VIRTUAL ---
     elif "Asistente Virtual" in opcion:
-        col_head, col_btn = st.columns([3, 1])
-        with col_head:
-            st.title("💬 Asistente Agrónomo Virtual")
-        with col_btn:
-            st.write("") # Espaciador para alinear el botón
-            if st.button("🗑️ Borrar Chat", use_container_width=True):
-                if borrar_historial_chat_bd(st.session_state.usuario):
-                    st.success("Historial borrado.")
-                    st.rerun()
-
-        st.write("Hazle preguntas sobre tratamientos, dosis de fertilizantes, cuidados de tu cultivo o adjunta notas de voz.")
+        st.title("Asistente Agrónomo Virtual")
+        st.write("Resuelve tus dudas sobre dosis, fertilizantes o control orgánico de plagas.")
 
         if not client:
-            st.warning("⚠️ La API Key de Gemini no está configurada en los Secrets de Streamlit. Por favor configúrala para habilitar el chat.")
+            st.warning("Configura tu API Key de Gemini en los Secrets de Streamlit para activar el asistente.")
         else:
-            mensajes_bd = obtener_historial_chat_bd(st.session_state.usuario)
+            for message in st.session_state.messages:
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
 
-            for msg in mensajes_bd:
-                with st.chat_message(msg["role"]):
-                    if msg["content"]:
-                        st.markdown(msg["content"])
-                    if msg["audio_path"] and os.path.exists(msg["audio_path"]):
-                        st.audio(msg["audio_path"])
-
-            audio_file = st.file_uploader("🎤 Adjuntar nota de voz (MP3, WAV, M4A)", type=["mp3", "wav", "m4a"], key="audio_uploader")
-            prompt = st.chat_input("Escribe tu duda agrícola aquí...")
-
-            if prompt or audio_file:
-                audio_saved_path = None
-                texto_a_enviar = prompt if prompt else "El usuario envió un mensaje de voz."
-
-                if audio_file:
-                    audio_saved_path = os.path.join(AUDIO_FOLDER, f"{st.session_state.usuario}_{audio_file.name}")
-                    with open(audio_saved_path, "wb") as f:
-                        f.write(audio_file.getbuffer())
-
+            if prompt := st.chat_input("Escribe tu consulta agrícola aquí..."):
+                st.session_state.messages.append({"role": "user", "content": prompt})
                 with st.chat_message("user"):
-                    if prompt:
-                        st.markdown(prompt)
-                    if audio_saved_path:
-                        st.audio(audio_saved_path)
-
-                guardar_mensaje_bd(
-                    usuario=st.session_state.usuario,
-                    role="user",
-                    content=prompt if prompt else "[Nota de voz adjunta]",
-                    audio_path=audio_saved_path
-                )
+                    st.markdown(prompt)
 
                 with st.chat_message("assistant"):
-                    with st.spinner("Pensando respuesta agrícola..."):
-                        modelos_a_probar = ['gemini-2.0-flash', 'gemini-1.5-flash']
-                        respuesta_exitosa = False
-
-                        for nombre_modelo in modelos_a_probar:
-                            try:
-                                response = client.models.generate_content(
-                                    model=nombre_modelo,
-                                    contents=texto_a_enviar,
-                                    config=types.GenerateContentConfig(
-                                        system_instruction="""
-                                        Eres AGRO IA, un experto agrónomo virtual especializado en agricultura, fertilización y plagas.
-                                        Responde de manera clara, educada, concisa y práctica para agricultores.
-                                        Si te hacen preguntas no relacionadas con la agricultura o ganadería, amablemente orienta al usuario hacia temas del campo.
-                                        """
-                                    )
+                    with st.spinner("Consultando información agronómica..."):
+                        try:
+                            response = client.models.generate_content(
+                                model='gemini-2.5-flash',
+                                contents=prompt,
+                                config=types.GenerateContentConfig(
+                                    system_instruction="Eres AGRO IA, un agrónomo virtual experto. Da respuestas concisas, prácticas y amables."
                                 )
-                                st.markdown(response.text)
-                                
-                                guardar_mensaje_bd(
-                                    usuario=st.session_state.usuario,
-                                    role="assistant",
-                                    content=response.text
-                                )
-                                respuesta_exitosa = True
-                                break
-                            except Exception:
-                                continue
+                            )
+                            st.markdown(response.text)
+                            st.session_state.messages.append({"role": "assistant", "content": response.text})
+                        except Exception as e:
+                            st.error(f"No se pudo conectar con el asistente: {e}")
 
-                        if not respuesta_exitosa:
-                            st.error("Error al conectar con los modelos de Gemini. Verifica la validez de tu API Key.")
-
-    elif "Registro Histórico" in opcion:
-        st.title("📜 Registro Histórico")
+    # --- VISTA: HISTORIAL ---
+    elif "Historial" in opcion:
+        st.title("Historial de Diagnósticos")
         try:
             conn = sqlite3.connect(DB_NAME)
-            df = pd.read_sql_query("SELECT cultivo, diagnostico, confianza, fecha FROM historial WHERE usuario = ? ORDER BY fecha DESC", conn, params=(st.session_state.usuario,))
+            df = pd.read_sql_query("SELECT cultivo AS Cultivo, diagnostico AS Diagnostico, confianza AS Confianza_Pct, fecha AS Fecha FROM historial WHERE usuario = ? ORDER BY fecha DESC", conn, params=(st.session_state.usuario,))
             conn.close()
             if not df.empty:
                 st.dataframe(df, use_container_width=True)
             else:
-                st.info("Aún no tienes escaneos registrados.")
+                st.info("Aún no tienes análisis guardados.")
         except Exception:
-            st.info("No hay registros en el historial.")
+            st.info("No hay registros en la base de datos.")
 
+    # --- VISTA: CATÁLOGO Y TRATAMIENTOS ---
     elif "Catálogo y Tratamientos" in opcion:
-        st.title("💡 Catálogo y Tratamientos")
-        st.write("Consulta recomendaciones sobre el cuidado de cultivos y tratamiento de plagas.")
+        st.title("Tratamientos y Prevención")
+        
+        col_cat1, col_cat2 = st.columns(2)
+        with col_cat1:
+            st.markdown("### 🧪 Fungicidas Orgánicos")
+            st.markdown("* **Oxicloruro de Cobre:** Control de roya y antracnosis.")
+            st.markdown("* **Jabón Potásico:** Control de pulgón y araña roja.")
+            st.markdown("* **Caldo Bordelés:** Excelente preventivo contra hongos.")
+        with col_cat2:
+            st.markdown("### 🛡️ Buenas Prácticas")
+            st.markdown("* **Rotación:** Cambiar cultivos por temporada.")
+            st.markdown("* **Podas sanitarias:** Retirar hojas enfermas a tiempo.")
+            st.markdown("* **Ventilación:** Mantener suficiente distancia entre plantas.")
 
+    # --- VISTA: MI PERFIL ---
     elif "Mi Perfil" in opcion:
-        st.title("👤 Mi Perfil")
-        st.write(f"**Nombre:** {st.session_state.nombre_completo}")
-        st.write(f"**Usuario:** {st.session_state.usuario}")
-        st.write("**Rol:** Agricultor / Productor")
+        st.title("Mi Perfil")
+        
+        st.markdown(f"**Nombre:** {st.session_state.nombre_completo}")
+        st.markdown(f"**Usuario:** {st.session_state.usuario}")
+        st.markdown("**Rol:** Agricultor / Productor")
+        st.markdown("**Estado:** <span class='badge badge-good'>Activo</span>", unsafe_allow_html=True)
