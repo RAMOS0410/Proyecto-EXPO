@@ -178,9 +178,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- CONFIGURACIÓN DE GEMINI IA ---
+# --- OBTENCIÓN DE API KEY ---
 api_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY"))
-client = genai.Client(api_key=api_key) if api_key else None
 
 # --- INFERENCIA TFLITE ---
 TFLITE_DISPONIBLE = False
@@ -510,8 +509,8 @@ else:
         st.title("Asistente Agrónomo Virtual")
         st.write("Resuelve tus dudas sobre dosis, fertilizantes o control orgánico de plagas.")
 
-        if not client:
-            st.warning("Configura tu API Key de Gemini en los Secrets de Streamlit para activar el asistente.")
+        if not api_key:
+            st.error("⚠️ No se detectó ninguna API Key. Agrégala en tu archivo `.streamlit/secrets.toml` o en la sección Secrets de Streamlit Cloud.")
         else:
             for message in st.session_state.messages:
                 with st.chat_message(message["role"]):
@@ -524,28 +523,19 @@ else:
 
                 with st.chat_message("assistant"):
                     with st.spinner("Consultando información agronómica..."):
-                        # Se prueban modelos compatibles
-                        modelos_a_probar = ['gemini-2.5-flash', 'gemini-1.5-flash']
-                        respuesta_exitosa = False
-
-                        for nombre_modelo in modelos_a_probar:
-                            try:
-                                response = client.models.generate_content(
-                                    model=nombre_modelo,
-                                    contents=prompt,
-                                    config=types.GenerateContentConfig(
-                                        system_instruction="Eres AGRO IA, un agrónomo virtual experto. Da respuestas concisas, prácticas y amables."
-                                    )
+                        try:
+                            ai_client = genai.Client(api_key=api_key)
+                            response = ai_client.models.generate_content(
+                                model='gemini-2.5-flash',
+                                contents=prompt,
+                                config=types.GenerateContentConfig(
+                                    system_instruction="Eres AGRO IA, un agrónomo virtual experto. Da respuestas concisas, prácticas y amables."
                                 )
-                                st.markdown(response.text)
-                                st.session_state.messages.append({"role": "assistant", "content": response.text})
-                                respuesta_exitosa = True
-                                break
-                            except Exception:
-                                continue
-
-                        if not respuesta_exitosa:
-                            st.error("No se pudo conectar con el asistente de Gemini. Revisa la validez de tu API Key.")
+                            )
+                            st.markdown(response.text)
+                            st.session_state.messages.append({"role": "assistant", "content": response.text})
+                        except Exception as e:
+                            st.error(f"Error al comunicar con la API: {str(e)}")
 
     # --- VISTA: HISTORIAL ---
     elif "Historial" in opcion:
