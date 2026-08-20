@@ -181,7 +181,7 @@ st.markdown("""
 # --- OBTENCIÓN DE API KEY ---
 api_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY"))
 
-# --- INFERENCIA TFLITE ---
+# --- INTENTO DE IMPORTAR TFLITE ---
 TFLITE_DISPONIBLE = False
 try:
     from ai_edge_litert.interpreter import Interpreter
@@ -368,7 +368,7 @@ else:
 
     def procesar_e_inferir(image):
         if not TFLITE_DISPONIBLE:
-            raise Exception("No hay un motor TFLite configurado en el servidor.")
+            return None, None
             
         try:
             interpreter = Interpreter(model_path="model_unquant.tflite")
@@ -473,58 +473,62 @@ else:
             st.subheader("📋 Resultado del Análisis")
             if imagen_file is not None:
                 if st.button("Analizar Hoja con IA", use_container_width=True):
-                    with st.spinner("Procesando imagen con modelo local y Gemini IA..."):
-                        try:
-                            # 1. Diagnóstico local TFLite
-                            diagnostico, confianza = procesar_e_inferir(img)
-                            confianza_pct = round(confianza * 100, 2)
-                            
-                            es_sana = "sana" in diagnostico.lower() or "healthy" in diagnostico.lower()
-                            badge_html = "<span class='badge badge-good'>Saludable</span>" if es_sana else "<span class='badge badge-high'>Riesgo Detectado</span>"
-                            
-                            st.markdown(f"### {diagnostico} {badge_html}", unsafe_allow_html=True)
-                            st.markdown(f"**Cultivo declarado:** {cultivo}")
-                            st.progress(confianza, text=f"Confianza TFLite: {confianza_pct}%")
-                            
-                            # 2. Análisis multimodal con Gemini API
-                            if api_key:
-                                st.markdown("---")
-                                st.subheader("🤖 Análisis Avanzado y Recomendaciones (Gemini IA)")
-                                try:
-                                    ai_client = genai.Client(api_key=api_key)
-                                    prompt_analisis = f"""
-                                    Analiza detalladamente esta imagen de cultivo. El usuario indicó que es un cultivo de {cultivo}.
-                                    
-                                    Proporciona la respuesta estructurada de la siguiente manera:
-                                    1. **Identificación de la planta y problema:** ¿Qué cultivo observas y qué plaga, hongo, deficiencia nutricional o síntoma presenta?
-                                    2. **Estado aparente:** ¿Qué tan severo se ve el daño?
-                                    3. **Tratamiento recomendado:**
-                                       - Tratamiento orgánico / casero.
-                                       - Tratamiento químico (si aplica).
-                                    4. **Medidas preventivas:** Recomendaciones agronómicas prácticas para evitar su propagación.
-                                    """
-                                    
-                                    response = ai_client.models.generate_content(
-                                        model='gemini-1.5-flash',
-                                        contents=[img, prompt_analisis]
-                                    )
-                                    st.markdown(response.text)
-                                except Exception as e_gemini:
-                                    st.warning(f"No se pudo obtener el análisis extendido de Gemini: {e_gemini}")
-                            
-                            # Guardar en Base de Datos
+                    with st.spinner("Analizando la imagen de tu cultivo..."):
+                        # 1. Inferencia TFLite (Opcional si la librería está instalada)
+                        diagnostico_tflite, confianza = None, None
+                        if TFLITE_DISPONIBLE:
                             try:
-                                conn = sqlite3.connect(DB_NAME)
-                                cursor = conn.cursor()
-                                cursor.execute("INSERT INTO historial (usuario, cultivo, diagnostico, confianza) VALUES (?, ?, ?, ?)",
-                                               (st.session_state.usuario, cultivo, diagnostico, confianza_pct))
-                                conn.commit()
-                                conn.close()
+                                diagnostico_tflite, confianza = procesar_e_inferir(img)
                             except Exception:
                                 pass
 
-                        except Exception as e:
-                            st.error(f"Error durante el análisis: {e}")
+                        if diagnostico_tflite and confianza:
+                            confianza_pct = round(confianza * 100, 2)
+                            es_sana = "sana" in diagnostico_tflite.lower() or "healthy" in diagnostico_tflite.lower()
+                            badge_html = "<span class='badge badge-good'>Saludable</span>" if es_sana else "<span class='badge badge-high'>Riesgo Detectado</span>"
+                            st.markdown(f"### {diagnostico_tflite} {badge_html}", unsafe_allow_html=True)
+                            st.progress(confianza, text=f"Confianza TFLite: {confianza_pct}%")
+
+                        # 2. Análisis multimodal con Gemini API
+                        if api_key:
+                            try:
+                                ai_client = genai.Client(api_key=api_key)
+                                prompt_analisis = f"""
+                                Analiza detalladamente esta imagen de cultivo. El usuario indicó que el cultivo es {cultivo}.
+                                
+                                Proporciona el diagnóstico estructurado con estas secciones:
+                                1. **Identificación de la planta y problema:** Describe la planta y el hongo, plaga o deficiencia que detectas.
+                                2. **Estado y Gravedad:** Determina si el nivel de afección es Bajo, Medio o Alto.
+                                3. **Tratamientos Sugeridos:**
+                                   - **Control Orgánico/Ecologico:** (Ingredientes caseros, bio-preparados).
+                                   - **Control Químico:** (Fungicidas o insecticidas recomendados).
+                                4. **Prevención:** Medidas agronómicas directas.
+                                """
+                                
+                                response = ai_client.models.generate_content(
+                                    model='gemini-1.5-flash',
+                                    contents=[img, prompt_analisis]
+                                )
+                                
+                                st.markdown("---")
+                                st.markdown("### 🔍 Diagnóstico e Informe Agrónomo (Gemini IA)")
+                                st.markdown(response.text)
+                                
+                                # Guardar en BD
+                                try:
+                                    conn = sqlite3.connect(DB_NAME)
+                                    cursor = conn.cursor()
+                                    cursor.execute("INSERT INTO historial (usuario, cultivo, diagnostico, confianza) VALUES (?, ?, ?, ?)",
+                                                   (st.session_state.usuario, cultivo, "Análisis Gemini Vision", 100.0))
+                                    conn.commit()
+                                    conn.close()
+                                except Exception:
+                                    pass
+
+                            except Exception as e_gemini:
+                                st.error(f"Error al conectar con Gemini: {e_gemini}")
+                        else:
+                            st.error("No se encontró la API Key de Gemini configurada.")
             else:
                 st.info("Sube o toma una foto en el panel izquierdo para obtener el diagnóstico.")
 
