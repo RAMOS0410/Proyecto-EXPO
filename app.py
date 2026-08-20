@@ -474,7 +474,7 @@ else:
             if imagen_file is not None:
                 if st.button("Analizar Hoja con IA", use_container_width=True):
                     with st.spinner("Analizando la imagen de tu cultivo..."):
-                        # 1. Inferencia TFLite
+                        # 1. Inferencia TFLite (Local)
                         diagnostico_tflite, confianza = None, None
                         if TFLITE_DISPONIBLE:
                             try:
@@ -492,7 +492,11 @@ else:
                         # 2. Análisis multimodal con Gemini API
                         if api_key:
                             try:
-                                ai_client = genai.Client(api_key=api_key)
+                                # Forzar la versión de API 'v1' para prevenir el error 404 NOT_FOUND de v1beta
+                                ai_client = genai.Client(
+                                    api_key=api_key,
+                                    http_options=types.HttpOptions(api_version="v1")
+                                )
                                 prompt_analisis = f"""
                                 Analiza detalladamente esta imagen de cultivo. El usuario indicó que el cultivo es {cultivo}.
                                 
@@ -505,7 +509,6 @@ else:
                                 4. **Prevención:** Medidas agronómicas directas.
                                 """
                                 
-                                # Cambio al identificador de modelo universal gemini-2.5-flash
                                 response = ai_client.models.generate_content(
                                     model='gemini-2.5-flash',
                                     contents=[img, prompt_analisis]
@@ -553,7 +556,11 @@ else:
                 with st.chat_message("assistant"):
                     with st.spinner("Consultando información agronómica..."):
                         try:
-                            ai_client = genai.Client(api_key=api_key)
+                            # Forzar la versión de API 'v1' para prevenir el error 404 NOT_FOUND de v1beta
+                            ai_client = genai.Client(
+                                api_key=api_key,
+                                http_options=types.HttpOptions(api_version="v1")
+                            )
                             response = ai_client.models.generate_content(
                                 model='gemini-2.5-flash',
                                 contents=prompt,
