@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ESTILOS CSS PERSONALIZADOS (MODO CLARO Y OSCURO + PALETA AGRO IA) ---
+# --- ESTILOS CSS PERSONALIZADOS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -25,7 +25,6 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
     }
 
-    /* VARIABLES DE COLOR */
     :root {
         --bg-main: #f4f6f3;
         --card-bg: #ffffff;
@@ -42,7 +41,6 @@ st.markdown("""
         --input-border: #dad7cd;
     }
 
-    /* SOPORTE PARA MODO OSCURO (PREFERS-COLOR-SCHEME & STREAMLIT DARK) */
     @media (prefers-color-scheme: dark) {
         :root {
             --bg-main: #121815;
@@ -61,12 +59,10 @@ st.markdown("""
         }
     }
 
-    /* Fondo general */
     .stApp {
         background-color: var(--bg-main) !important;
     }
 
-    /* Sidebar Lateral */
     [data-testid="stSidebar"] {
         background-color: var(--sidebar-bg) !important;
         padding-top: 1rem;
@@ -76,7 +72,6 @@ st.markdown("""
         color: var(--sidebar-text) !important;
     }
 
-    /* Transición en menú de navegación */
     [data-testid="stSidebar"] .stRadio label {
         padding: 10px 14px;
         border-radius: 10px;
@@ -87,7 +82,6 @@ st.markdown("""
         background-color: #3a5a40 !important;
     }
 
-    /* Títulos y Encabezados */
     h1, h2, h3, h4 {
         color: var(--text-title) !important;
         font-weight: 700 !important;
@@ -97,7 +91,6 @@ st.markdown("""
         color: var(--text-body);
     }
 
-    /* Tarjetas/Contenedores tipo App */
     div[data-testid="stVerticalBlock"] > div > div[data-testid="stVerticalBlock"] {
         background-color: var(--card-bg) !important;
         border-radius: 16px !important;
@@ -107,7 +100,6 @@ st.markdown("""
         margin-bottom: 15px !important;
     }
 
-    /* Botones de la aplicación */
     div.stButton > button {
         background-color: var(--primary-btn) !important;
         color: #ffffff !important;
@@ -126,7 +118,6 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
 
-    /* Inputs de texto y selectores */
     .stTextInput input, .stSelectbox > div > div {
         background-color: var(--input-bg) !important;
         color: var(--input-text) !important;
@@ -134,11 +125,6 @@ st.markdown("""
         border: 1px solid var(--input-border) !important;
     }
 
-    .stTextInput input:focus {
-        border-color: var(--primary-btn) !important;
-    }
-
-    /* Insignias de Estado / Riesgo (Badges) */
     .badge {
         display: inline-block;
         padding: 4px 12px;
@@ -152,7 +138,6 @@ st.markdown("""
     .badge-low { background-color: #e0e7ff; color: #3730a3; }
     .badge-good { background-color: #d1fae5; color: #065f46; }
 
-    /* Estilo de Tarjeta de Resumen */
     .metric-card {
         background-color: var(--card-bg);
         border: 1px solid var(--card-border);
@@ -171,7 +156,6 @@ st.markdown("""
         color: var(--text-muted);
     }
 
-    /* Pestañas (Tabs) */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
     }
@@ -424,7 +408,6 @@ else:
         st.title(f"¡Hola, {st.session_state.nombre_completo}! 👋")
         st.write("Este es el estado de tus cultivos hoy.")
         
-        # Tarjetas resumen estilizadas
         c1, c2, c3 = st.columns(3)
         with c1:
             st.markdown("""
@@ -541,18 +524,28 @@ else:
 
                 with st.chat_message("assistant"):
                     with st.spinner("Consultando información agronómica..."):
-                        try:
-                            response = client.models.generate_content(
-                                model='gemini-2.5-flash',
-                                contents=prompt,
-                                config=types.GenerateContentConfig(
-                                    system_instruction="Eres AGRO IA, un agrónomo virtual experto. Da respuestas concisas, prácticas y amables."
+                        # Se prueban modelos compatibles
+                        modelos_a_probar = ['gemini-2.5-flash', 'gemini-1.5-flash']
+                        respuesta_exitosa = False
+
+                        for nombre_modelo in modelos_a_probar:
+                            try:
+                                response = client.models.generate_content(
+                                    model=nombre_modelo,
+                                    contents=prompt,
+                                    config=types.GenerateContentConfig(
+                                        system_instruction="Eres AGRO IA, un agrónomo virtual experto. Da respuestas concisas, prácticas y amables."
+                                    )
                                 )
-                            )
-                            st.markdown(response.text)
-                            st.session_state.messages.append({"role": "assistant", "content": response.text})
-                        except Exception as e:
-                            st.error(f"No se pudo conectar con el asistente: {e}")
+                                st.markdown(response.text)
+                                st.session_state.messages.append({"role": "assistant", "content": response.text})
+                                respuesta_exitosa = True
+                                break
+                            except Exception:
+                                continue
+
+                        if not respuesta_exitosa:
+                            st.error("No se pudo conectar con el asistente de Gemini. Revisa la validez de tu API Key.")
 
     # --- VISTA: HISTORIAL ---
     elif "Historial" in opcion:
