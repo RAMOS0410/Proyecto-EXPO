@@ -2,6 +2,7 @@ import streamlit as st
 import sqlite3
 import hashlib
 import os
+import time
 import pandas as pd
 import numpy as np
 from PIL import Image, ImageOps
@@ -489,44 +490,52 @@ else:
                             st.progress(confianza, text=f"Confianza TFLite: {confianza_pct}%")
 
                         if api_key:
-                            try:
-                                ai_client = genai.Client(
-                                    api_key=api_key,
-                                    http_options=types.HttpOptions(api_version="v1")
-                                )
-                                prompt_analisis = f"""
-                                Analiza detalladamente esta imagen de cultivo. El usuario indicó que el cultivo es {cultivo}.
-                                
-                                Proporciona el diagnóstico estructurado con estas secciones:
-                                1. **Identificación de la planta y problema:** Describe la planta y el hongo, plaga o deficiencia que detectas.
-                                2. **Estado y Gravedad:** Determina si el nivel de afección es Bajo, Medio o Alto.
-                                3. **Tratamientos Sugeridos:**
-                                   - **Control Orgánico/Ecológico:** (Ingredientes caseros, bio-preparados).
-                                   - **Control Químico:** (Fungicidas o insecticidas recomendados).
-                                4. **Prevención:** Medidas agronómicas directas.
-                                """
-                                
-                                response = ai_client.models.generate_content(
-                                    model='gemini-3.6-flash',
-                                    contents=[img, prompt_analisis]
-                                )
-                                
-                                st.markdown("---")
-                                st.markdown("### 🔍 Diagnóstico e Informe Agrónomo (Gemini IA)")
-                                st.markdown(response.text)
-                                
+                            prompt_analisis = f"""
+                            Analiza detalladamente esta imagen de cultivo. El usuario indicó que el cultivo es {cultivo}.
+                            
+                            Proporciona el diagnóstico estructurado con estas secciones:
+                            1. **Identificación de la planta y problema:** Describe la planta y el hongo, plaga o deficiencia que detectas.
+                            2. **Estado y Gravedad:** Determina si el nivel de afección es Bajo, Medio o Alto.
+                            3. **Tratamientos Sugeridos:**
+                               - **Control Orgánico/Ecológico:** (Ingredientes caseros, bio-preparados).
+                               - **Control Químico:** (Fungicidas o insecticidas recomendados).
+                            4. **Prevención:** Medidas agronómicas directas.
+                            """
+                            
+                            exito_vision = False
+                            for intento in range(3):
                                 try:
-                                    conn = sqlite3.connect(DB_NAME)
-                                    cursor = conn.cursor()
-                                    cursor.execute("INSERT INTO historial (usuario, cultivo, diagnostico, confianza) VALUES (?, ?, ?, ?)",
-                                                   (st.session_state.usuario, cultivo, "Análisis Gemini Vision", 100.0))
-                                    conn.commit()
-                                    conn.close()
-                                except Exception:
-                                    pass
-
-                            except Exception as e_gemini:
-                                st.error(f"Error al conectar con Gemini: {e_gemini}")
+                                    ai_client = genai.Client(
+                                        api_key=api_key,
+                                        http_options=types.HttpOptions(api_version="v1")
+                                    )
+                                    response = ai_client.models.generate_content(
+                                        model='gemini-2.5-flash',
+                                        contents=[img, prompt_analisis]
+                                    )
+                                    
+                                    st.markdown("---")
+                                    st.markdown("### 🔍 Diagnóstico e Informe Agrónomo (Gemini IA)")
+                                    st.markdown(response.text)
+                                    
+                                    try:
+                                        conn = sqlite3.connect(DB_NAME)
+                                        cursor = conn.cursor()
+                                        cursor.execute("INSERT INTO historial (usuario, cultivo, diagnostico, confianza) VALUES (?, ?, ?, ?)",
+                                                       (st.session_state.usuario, cultivo, "Análisis Gemini Vision", 100.0))
+                                        conn.commit()
+                                        conn.close()
+                                    except Exception:
+                                        pass
+                                    
+                                    exito_vision = True
+                                    break
+                                except Exception as e_gemini:
+                                    if "503" in str(e_gemini) and intento < 2:
+                                        time.sleep(2)
+                                    else:
+                                        st.error("Los servidores de IA están congestionados en este momento. Por favor, reintenta en unos segundos.")
+                                        break
                         else:
                             st.error("No se encontró la API Key de Gemini configurada.")
             else:
@@ -551,22 +560,30 @@ else:
 
                 with st.chat_message("assistant"):
                     with st.spinner("Consultando información agronómica..."):
-                        try:
-                            ai_client = genai.Client(
-                                api_key=api_key,
-                                http_options=types.HttpOptions(api_version="v1")
-                            )
-                            response = ai_client.models.generate_content(
-                                model='gemini-3.6-flash',
-                                contents=prompt,
-                                config=types.GenerateContentConfig(
-                                    system_instruction="Eres AGRO IA, un agrónomo virtual experto. Da respuestas concisas, prácticas y amables."
+                        exito_chat = False
+                        for intento in range(3):
+                            try:
+                                ai_client = genai.Client(
+                                    api_key=api_key,
+                                    http_options=types.HttpOptions(api_version="v1")
                                 )
-                            )
-                            st.markdown(response.text)
-                            st.session_state.messages.append({"role": "assistant", "content": response.text})
-                        except Exception as e:
-                            st.error(f"Error al comunicar con la API: {str(e)}")
+                                response = ai_client.models.generate_content(
+                                    model='gemini-2.5-flash',
+                                    contents=prompt,
+                                    config=types.GenerateContentConfig(
+                                        system_instruction="Eres AGRO IA, un agrónomo virtual experto. Da respuestas concisas, prácticas y amables."
+                                    )
+                                )
+                                st.markdown(response.text)
+                                st.session_state.messages.append({"role": "assistant", "content": response.text})
+                                exito_chat = True
+                                break
+                            except Exception as e:
+                                if "503" in str(e) and intento < 2:
+                                    time.sleep(2)
+                                else:
+                                    st.error("Los servidores de IA están experimentando alta demanda en este momento. Por favor, intenta de nuevo en unos momentos.")
+                                    break
 
     # --- VISTA: HISTORIAL ---
     elif "Historial" in opcion:
