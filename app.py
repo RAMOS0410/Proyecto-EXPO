@@ -503,6 +503,7 @@ else:
                             """
                             
                             exito_vision = False
+                            ultimo_error_vision = ""
                             for intento in range(3):
                                 try:
                                     ai_client = genai.Client(
@@ -531,11 +532,14 @@ else:
                                     exito_vision = True
                                     break
                                 except Exception as e_gemini:
-                                    if "503" in str(e_gemini) and intento < 2:
+                                    ultimo_error_vision = str(e_gemini)
+                                    if any(term in ultimo_error_vision.upper() for term in ["503", "UNAVAILABLE", "HIGH DEMAND"]) and intento < 2:
                                         time.sleep(2)
                                     else:
-                                        st.error("Los servidores de IA están congestionados en este momento. Por favor, reintenta en unos segundos.")
                                         break
+                            
+                            if not exito_vision:
+                                st.error(f"Error al comunicar con la API: {ultimo_error_vision}")
                         else:
                             st.error("No se encontró la API Key de Gemini configurada.")
             else:
@@ -561,6 +565,8 @@ else:
                 with st.chat_message("assistant"):
                     with st.spinner("Consultando información agronómica..."):
                         exito_chat = False
+                        ultimo_error = ""
+                        
                         for intento in range(3):
                             try:
                                 ai_client = genai.Client(
@@ -579,11 +585,14 @@ else:
                                 exito_chat = True
                                 break
                             except Exception as e:
-                                if "503" in str(e) and intento < 2:
+                                ultimo_error = str(e)
+                                if any(term in ultimo_error.upper() for term in ["503", "UNAVAILABLE", "HIGH DEMAND"]) and intento < 2:
                                     time.sleep(2)
                                 else:
-                                    st.error("Los servidores de IA están experimentando alta demanda en este momento. Por favor, intenta de nuevo en unos momentos.")
                                     break
+                        
+                        if not exito_chat:
+                            st.error(f"Error al comunicar con la API: {ultimo_error}")
 
     # --- VISTA: HISTORIAL ---
     elif "Historial" in opcion:
