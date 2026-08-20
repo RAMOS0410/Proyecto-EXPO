@@ -6,8 +6,7 @@ import time
 import pandas as pd
 import numpy as np
 from PIL import Image, ImageOps
-from google import genai
-from google.genai import types
+import google.generativeai as genai
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
@@ -179,9 +178,12 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- OBTENCIÓN DE API KEY ---
+# --- OBTENCIÓN Y CONFIGURACIÓN DE API KEY ---
 raw_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
 api_key = str(raw_key).strip().strip('"').strip("'")
+
+if api_key:
+    genai.configure(api_key=api_key)
 
 # --- INTENTO DE IMPORTAR TFLITE ---
 TFLITE_DISPONIBLE = False
@@ -507,14 +509,8 @@ else:
                             ultimo_error_vision = ""
                             for intento in range(3):
                                 try:
-                                    ai_client = genai.Client(
-                                        api_key=api_key,
-                                        http_options=types.HttpOptions(api_version="v1")
-                                    )
-                                    response = ai_client.models.generate_content(
-                                        model='gemini-3.6-flash',
-                                        contents=[img, prompt_analisis]
-                                    )
+                                    model = genai.GenerativeModel('gemini-1.5-flash')
+                                    response = model.generate_content([img, prompt_analisis])
                                     
                                     st.markdown("---")
                                     st.markdown("### 🔍 Diagnóstico e Informe Agrónomo (Gemini IA)")
@@ -541,7 +537,7 @@ else:
                             
                             if not exito_vision:
                                 if "429" in ultimo_error_vision or "RESOURCE_EXHAUSTED" in ultimo_error_vision:
-                                    st.warning("⏳ Alcanzaste el límite de consultas de la API. Espera unos segundos y vuelve a presionar 'Analizar Hoja con IA'.")
+                                    st.warning("⏳ Alcanzaste el límite de consultas diarias o por minuto. Espera un momento antes de volver a presionar 'Analizar Hoja con IA'.")
                                 else:
                                     st.error(f"Error al comunicar con la API: {ultimo_error_vision}")
                         else:
@@ -573,17 +569,11 @@ else:
                         
                         for intento in range(3):
                             try:
-                                ai_client = genai.Client(
-                                    api_key=api_key,
-                                    http_options=types.HttpOptions(api_version="v1")
+                                model = genai.GenerativeModel(
+                                    'gemini-1.5-flash',
+                                    system_instruction="Eres AGRO IA, un agrónomo virtual experto. Da respuestas concisas, prácticas y amables."
                                 )
-                                response = ai_client.models.generate_content(
-                                    model='gemini-3.6-flash',
-                                    contents=prompt,
-                                    config=types.GenerateContentConfig(
-                                        system_instruction="Eres AGRO IA, un agrónomo virtual experto. Da respuestas concisas, prácticas y amables."
-                                    )
-                                )
+                                response = model.generate_content(prompt)
                                 st.markdown(response.text)
                                 st.session_state.messages.append({"role": "assistant", "content": response.text})
                                 exito_chat = True

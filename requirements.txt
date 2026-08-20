@@ -2,4 +2,4 @@ streamlit
 numpy
 pillow
 pandas
-google-genai
+google-generativeai
