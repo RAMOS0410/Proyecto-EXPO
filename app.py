@@ -474,7 +474,7 @@ else:
             if imagen_file is not None:
                 if st.button("Analizar Hoja con IA", use_container_width=True):
                     with st.spinner("Analizando la imagen de tu cultivo..."):
-                        # 1. Inferencia TFLite (Opcional si la librería está instalada)
+                        # 1. Inferencia TFLite
                         diagnostico_tflite, confianza = None, None
                         if TFLITE_DISPONIBLE:
                             try:
@@ -500,13 +500,14 @@ else:
                                 1. **Identificación de la planta y problema:** Describe la planta y el hongo, plaga o deficiencia que detectas.
                                 2. **Estado y Gravedad:** Determina si el nivel de afección es Bajo, Medio o Alto.
                                 3. **Tratamientos Sugeridos:**
-                                   - **Control Orgánico/Ecologico:** (Ingredientes caseros, bio-preparados).
+                                   - **Control Orgánico/Ecológico:** (Ingredientes caseros, bio-preparados).
                                    - **Control Químico:** (Fungicidas o insecticidas recomendados).
                                 4. **Prevención:** Medidas agronómicas directas.
                                 """
                                 
+                                # Cambio al identificador de modelo universal gemini-2.5-flash
                                 response = ai_client.models.generate_content(
-                                    model='gemini-1.5-flash',
+                                    model='gemini-2.5-flash',
                                     contents=[img, prompt_analisis]
                                 )
                                 
@@ -554,7 +555,7 @@ else:
                         try:
                             ai_client = genai.Client(api_key=api_key)
                             response = ai_client.models.generate_content(
-                                model='gemini-1.5-flash',
+                                model='gemini-2.5-flash',
                                 contents=prompt,
                                 config=types.GenerateContentConfig(
                                     system_instruction="Eres AGRO IA, un agrónomo virtual experto. Da respuestas concisas, prácticas y amables."
