@@ -315,7 +315,7 @@ else:
             else:
                 st.info("Sube o toma una fotografía para ver los resultados.")
 
-    # --- VISTA: ASISTENTE VIRTUAL DE CONSULTAS ---
+# --- VISTA: ASISTENTE VIRTUAL DE CONSULTAS ---
     elif "Asistente Virtual" in opcion:
         st.title("💬 Asistente Agrónomo Virtual")
         st.write("Hazle preguntas sobre tratamientos, dosis de fertilizantes, cuidados de tu cultivo o cómo combatir plagas.")
@@ -336,22 +336,32 @@ else:
 
                 with st.chat_message("assistant"):
                     with st.spinner("Pensando respuesta agrícola..."):
-                        try:
-                            response = client.models.generate_content(
-                                model='gemini-2.5-flash',
-                                contents=prompt,
-                                config=types.GenerateContentConfig(
-                                    system_instruction="""
-                                    Eres AGRO IA, un experto agrónomo virtual especializado en agricultura, fertilización y plagas.
-                                    Responde de manera clara, educada, concisa y práctica para agricultores.
-                                    Si te hacen preguntas no relacionadas con la agricultura o ganadería, amablemente orienta al usuario hacia temas del campo.
-                                    """
+                        # Lista de nombres de modelos a probar en orden
+                        modelos_a_probar = ['gemini-3.6-flash', 'gemini-1.5-flash', 'gemini-2.0-flash']
+                        respuesta_exitosa = False
+
+                        for nombre_modelo in modelos_a_probar:
+                            try:
+                                response = client.models.generate_content(
+                                    model=nombre_modelo,
+                                    contents=prompt,
+                                    config=types.GenerateContentConfig(
+                                        system_instruction="""
+                                        Eres AGRO IA, un experto agrónomo virtual especializado en agricultura, fertilización y plagas.
+                                        Responde de manera clara, educada, concisa y práctica para agricultores.
+                                        Si te hacen preguntas no relacionadas con la agricultura o ganadería, amablemente orienta al usuario hacia temas del campo.
+                                        """
+                                    )
                                 )
-                            )
-                            st.markdown(response.text)
-                            st.session_state.messages.append({"role": "assistant", "content": response.text})
-                        except Exception as e:
-                            st.error(f"Error al conectar con el asistente: {e}")
+                                st.markdown(response.text)
+                                st.session_state.messages.append({"role": "assistant", "content": response.text})
+                                respuesta_exitosa = True
+                                break
+                            except Exception:
+                                continue
+
+                        if not respuesta_exitosa:
+                            st.error("Error al conectar con los modelos de Gemini. Verifica la validez de tu API Key.")
 
     elif "Registro Histórico" in opcion:
         st.title("📜 Registro Histórico")
