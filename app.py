@@ -511,7 +511,7 @@ else:
                                         http_options=types.HttpOptions(api_version="v1")
                                     )
                                     response = ai_client.models.generate_content(
-                                        model='gemini-2.5-flash',
+                                        model='gemini-3.6-flash',
                                         contents=[img, prompt_analisis]
                                     )
                                     
@@ -574,7 +574,7 @@ else:
                                     http_options=types.HttpOptions(api_version="v1")
                                 )
                                 response = ai_client.models.generate_content(
-                                    model='gemini-2.5-flash',
+                                    model='gemini-3.6-flash',
                                     contents=prompt,
                                     config=types.GenerateContentConfig(
                                         system_instruction="Eres AGRO IA, un agrónomo virtual experto. Da respuestas concisas, prácticas y amables."
