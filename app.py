@@ -180,7 +180,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- OBTENCIÓN DE API KEY ---
-api_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY"))
+raw_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
+api_key = str(raw_key).strip().strip('"').strip("'")
 
 # --- INTENTO DE IMPORTAR TFLITE ---
 TFLITE_DISPONIBLE = False
@@ -533,15 +534,18 @@ else:
                                     break
                                 except Exception as e_gemini:
                                     ultimo_error_vision = str(e_gemini)
-                                    if any(term in ultimo_error_vision.upper() for term in ["503", "UNAVAILABLE", "HIGH DEMAND"]) and intento < 2:
-                                        time.sleep(2)
+                                    if any(term in ultimo_error_vision.upper() for term in ["429", "RESOURCE_EXHAUSTED", "503", "UNAVAILABLE", "HIGH DEMAND"]) and intento < 2:
+                                        time.sleep(5)
                                     else:
                                         break
                             
                             if not exito_vision:
-                                st.error(f"Error al comunicar con la API: {ultimo_error_vision}")
+                                if "429" in ultimo_error_vision or "RESOURCE_EXHAUSTED" in ultimo_error_vision:
+                                    st.warning("⏳ Alcanzaste el límite de consultas de la API. Espera unos segundos y vuelve a presionar 'Analizar Hoja con IA'.")
+                                else:
+                                    st.error(f"Error al comunicar con la API: {ultimo_error_vision}")
                         else:
-                            st.error("No se encontró la API Key de Gemini configurada.")
+                            st.error("No se encontró la API Key de Gemini configurada. Agrégala en la sección Secrets de Streamlit.")
             else:
                 st.info("Sube o toma una foto en el panel izquierdo para obtener el diagnóstico.")
 
@@ -586,13 +590,16 @@ else:
                                 break
                             except Exception as e:
                                 ultimo_error = str(e)
-                                if any(term in ultimo_error.upper() for term in ["503", "UNAVAILABLE", "HIGH DEMAND"]) and intento < 2:
-                                    time.sleep(2)
+                                if any(term in ultimo_error.upper() for term in ["429", "RESOURCE_EXHAUSTED", "503", "UNAVAILABLE", "HIGH DEMAND"]) and intento < 2:
+                                    time.sleep(5)
                                 else:
                                     break
                         
                         if not exito_chat:
-                            st.error(f"Error al comunicar con la API: {ultimo_error}")
+                            if "429" in ultimo_error or "RESOURCE_EXHAUSTED" in ultimo_error:
+                                st.warning("⏳ Límite de peticiones alcanzado. Espera un momento antes de volver a preguntar.")
+                            else:
+                                st.error(f"Error al comunicar con la API: {ultimo_error}")
 
     # --- VISTA: HISTORIAL ---
     elif "Historial" in opcion:
