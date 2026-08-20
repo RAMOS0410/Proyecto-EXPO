@@ -450,7 +450,7 @@ else:
     # --- VISTA: DETECTAR PLAGA ---
     elif "Detectar Plaga" in opcion:
         st.title("Nuevo Diagnóstico")
-        st.write("Toma una foto o sube una imagen de tu cultivo para identificar posibles plagas.")
+        st.write("Toma una foto o sube una imagen de tu cultivo para identificar posibles plagas y recibir recomendaciones.")
 
         col1, col2 = st.columns([1, 1])
 
@@ -473,23 +473,46 @@ else:
             st.subheader("📋 Resultado del Análisis")
             if imagen_file is not None:
                 if st.button("Analizar Hoja con IA", use_container_width=True):
-                    with st.spinner("Procesando imagen..."):
+                    with st.spinner("Procesando imagen con modelo local y Gemini IA..."):
                         try:
+                            # 1. Diagnóstico local TFLite
                             diagnostico, confianza = procesar_e_inferir(img)
                             confianza_pct = round(confianza * 100, 2)
                             
                             es_sana = "sana" in diagnostico.lower() or "healthy" in diagnostico.lower()
-                            badge_html = "<span class='badge badge-good'>Saludable</span>" if es_sana else "<span class='badge badge-high'>Riesgo: Alto</span>"
+                            badge_html = "<span class='badge badge-good'>Saludable</span>" if es_sana else "<span class='badge badge-high'>Riesgo Detectado</span>"
                             
                             st.markdown(f"### {diagnostico} {badge_html}", unsafe_allow_html=True)
-                            st.markdown(f"**Cultivo:** {cultivo}")
-                            st.progress(confianza, text=f"Confianza del modelo: {confianza_pct}%")
+                            st.markdown(f"**Cultivo declarado:** {cultivo}")
+                            st.progress(confianza, text=f"Confianza TFLite: {confianza_pct}%")
                             
-                            if es_sana:
-                                st.success("La planta muestra signos de estar saludable.")
-                            else:
-                                st.warning("Recomendación: Aplicar tratamiento enfocado y mantener buena ventilación entre plantas.")
+                            # 2. Análisis multimodal con Gemini API
+                            if api_key:
+                                st.markdown("---")
+                                st.subheader("🤖 Análisis Avanzado y Recomendaciones (Gemini IA)")
+                                try:
+                                    ai_client = genai.Client(api_key=api_key)
+                                    prompt_analisis = f"""
+                                    Analiza detalladamente esta imagen de cultivo. El usuario indicó que es un cultivo de {cultivo}.
+                                    
+                                    Proporciona la respuesta estructurada de la siguiente manera:
+                                    1. **Identificación de la planta y problema:** ¿Qué cultivo observas y qué plaga, hongo, deficiencia nutricional o síntoma presenta?
+                                    2. **Estado aparente:** ¿Qué tan severo se ve el daño?
+                                    3. **Tratamiento recomendado:**
+                                       - Tratamiento orgánico / casero.
+                                       - Tratamiento químico (si aplica).
+                                    4. **Medidas preventivas:** Recomendaciones agronómicas prácticas para evitar su propagación.
+                                    """
+                                    
+                                    response = ai_client.models.generate_content(
+                                        model='gemini-1.5-flash',
+                                        contents=[img, prompt_analisis]
+                                    )
+                                    st.markdown(response.text)
+                                except Exception as e_gemini:
+                                    st.warning(f"No se pudo obtener el análisis extendido de Gemini: {e_gemini}")
                             
+                            # Guardar en Base de Datos
                             try:
                                 conn = sqlite3.connect(DB_NAME)
                                 cursor = conn.cursor()
@@ -499,6 +522,7 @@ else:
                                 conn.close()
                             except Exception:
                                 pass
+
                         except Exception as e:
                             st.error(f"Error durante el análisis: {e}")
             else:
