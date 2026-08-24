@@ -1,11 +1,11 @@
-import streamlit as st
-import sqlite3
 import hashlib
 import os
 import base64
+import sqlite3
 import pandas as pd
 from PIL import Image
 from openai import OpenAI
+import streamlit as st
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
@@ -176,6 +176,8 @@ if "nombre_completo" not in st.session_state:
     st.session_state.nombre_completo = ""
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "confirmar_logout" not in st.session_state:
+    st.session_state.confirmar_logout = False
 
 # --- PANTALLA DE LOGIN ---
 if not st.session_state.autenticado:
@@ -212,7 +214,7 @@ if not st.session_state.autenticado:
 # --- PANEL PRINCIPAL ---
 else:
     st.sidebar.title("AGRO IA")
-    st.sidebar.caption("Panel de Control")
+    st.sidebar.caption(f"Usuario: {st.session_state.nombre_completo}")
     st.sidebar.write("---")
     
     opcion = st.sidebar.radio(
@@ -221,14 +223,28 @@ else:
     )
     
     st.sidebar.write("---")
-    st.sidebar.write(f"**Usuario:** {st.session_state.nombre_completo}")
-    if st.sidebar.button("Cerrar Sesión", use_container_width=True):
-        st.session_state.autenticado = False
-        st.session_state.usuario = ""
-        st.session_state.messages = []
-        st.rerun()
+    
+    # Manejo con confirmación para cerrar sesión
+    if not st.session_state.confirmar_logout:
+        if st.sidebar.button("Cerrar Sesión", use_container_width=True, type="secondary"):
+            st.session_state.confirmar_logout = True
+            st.rerun()
+    else:
+        st.sidebar.warning("¿Seguro que deseas salir?")
+        col_s1, col_s2 = st.sidebar.columns(2)
+        with col_s1:
+            if st.button("Sí", use_container_width=True, key="btn_logout_confirm"):
+                st.session_state.autenticado = False
+                st.session_state.usuario = ""
+                st.session_state.messages = []
+                st.session_state.confirmar_logout = False
+                st.rerun()
+        with col_s2:
+            if st.button("Cancelar", use_container_width=True, key="btn_logout_cancel"):
+                st.session_state.confirmar_logout = False
+                st.rerun()
 
-    # --- 1. INICIO E HISTORIAL (SIN TARJETAS FIJAS DE MÉTRICAS) ---
+    # --- 1. INICIO E HISTORIAL ---
     if "Inicio" in opcion:
         st.title(f"Bienvenido, {st.session_state.nombre_completo}")
         st.caption("Consulta el registro y la evolución de los diagnósticos de tus cultivos.")
@@ -306,7 +322,6 @@ else:
                                 resultado = response.choices[0].message.content
                                 st.markdown(resultado)
                                 
-                                # Guardar en base de datos
                                 conn = sqlite3.connect(DB_NAME)
                                 cursor = conn.cursor()
                                 cursor.execute("INSERT INTO historial (usuario, cultivo, diagnostico) VALUES (?, ?, ?)",
