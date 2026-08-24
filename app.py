@@ -176,8 +176,6 @@ if "nombre_completo" not in st.session_state:
     st.session_state.nombre_completo = ""
 if "messages" not in st.session_state:
     st.session_state.messages = []
-if "confirmar_logout" not in st.session_state:
-    st.session_state.confirmar_logout = False
 
 # --- PANTALLA DE LOGIN ---
 if not st.session_state.autenticado:
@@ -214,38 +212,16 @@ if not st.session_state.autenticado:
 # --- PANEL PRINCIPAL ---
 else:
     st.sidebar.title("AGRO IA")
-    st.sidebar.caption(f"Usuario: {st.session_state.nombre_completo}")
+    st.sidebar.caption(f"Sesión activa: {st.session_state.usuario}")
     st.sidebar.write("---")
     
     opcion = st.sidebar.radio(
         "Navegación",
-        ["Inicio e Historial", "Detectar Plaga", "Asistente Virtual", "Catálogo y Tratamientos"]
+        ["Inicio e Historial", "Detectar Plaga", "Asistente Virtual", "Catálogo y Tratamientos", "Mi Cuenta"]
     )
-    
-    st.sidebar.write("---")
-    
-    # Manejo con confirmación para cerrar sesión
-    if not st.session_state.confirmar_logout:
-        if st.sidebar.button("Cerrar Sesión", use_container_width=True, type="secondary"):
-            st.session_state.confirmar_logout = True
-            st.rerun()
-    else:
-        st.sidebar.warning("¿Seguro que deseas salir?")
-        col_s1, col_s2 = st.sidebar.columns(2)
-        with col_s1:
-            if st.button("Sí", use_container_width=True, key="btn_logout_confirm"):
-                st.session_state.autenticado = False
-                st.session_state.usuario = ""
-                st.session_state.messages = []
-                st.session_state.confirmar_logout = False
-                st.rerun()
-        with col_s2:
-            if st.button("Cancelar", use_container_width=True, key="btn_logout_cancel"):
-                st.session_state.confirmar_logout = False
-                st.rerun()
 
     # --- 1. INICIO E HISTORIAL ---
-    if "Inicio" in opcion:
+    if opcion == "Inicio e Historial":
         st.title(f"Bienvenido, {st.session_state.nombre_completo}")
         st.caption("Consulta el registro y la evolución de los diagnósticos de tus cultivos.")
         
@@ -268,7 +244,7 @@ else:
             st.error(f"Error al cargar historial: {e}")
 
     # --- 2. DETECTAR PLAGA ---
-    elif "Detectar Plaga" in opcion:
+    elif opcion == "Detectar Plaga":
         st.title("Diagnóstico de Cultivo")
         st.caption("Sube una imagen o toma una foto para analizar el estado de salud de tu muestra.")
 
@@ -337,7 +313,7 @@ else:
                 st.info("Carga una foto en el panel izquierdo para ver los resultados aquí.")
 
     # --- 3. ASISTENTE VIRTUAL ---
-    elif "Asistente Virtual" in opcion:
+    elif opcion == "Asistente Virtual":
         st.title("Asistente Agrónomo")
         st.caption("Consulta dudas sobre tratamiento de suelos, dosis o manejo de plagas.")
 
@@ -367,7 +343,7 @@ else:
                         st.error(f"Error: {e}")
 
     # --- 4. CATÁLOGO Y TRATAMIENTOS ---
-    elif "Catálogo y Tratamientos" in opcion:
+    elif opcion == "Catálogo y Tratamientos":
         st.title("Catálogo de Soluciones")
         st.caption("Guía de tratamientos orgánicos y preventivos para cultivos.")
         
@@ -387,3 +363,21 @@ else:
             st.image("https://images.unsplash.com/photo-1592417817098-8f3d6ef23a81?w=400", caption="Prevención de Suelo", use_container_width=True)
             st.markdown("**Caldo Bordelés**")
             st.write("Mezcla de sulfato de cobre y cal para prevenir bacterias y hongos.")
+
+    # --- 5. MI CUENTA / AJUSTES (APARTADO INDEPENDIENTE) ---
+    elif opcion == "Mi Cuenta":
+        st.title("Gestión de Cuenta")
+        st.caption("Información del perfil de usuario y opciones de sesión.")
+        
+        st.write(f"**Nombre:** {st.session_state.nombre_completo}")
+        st.write(f"**Usuario:** {st.session_state.usuario}")
+        st.write("---")
+        
+        col_logout, _ = st.columns([1, 2])
+        with col_logout:
+            if st.button("Cerrar Sesión", use_container_width=True):
+                st.session_state.autenticado = False
+                st.session_state.usuario = ""
+                st.session_state.nombre_completo = ""
+                st.session_state.messages = []
+                st.rerun()
