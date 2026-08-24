@@ -452,14 +452,13 @@ else:
     # --- 2. DETECTAR PLAGA ---
     elif "Detectar Plaga" in opcion:
         st.title("Nuevo Diagnóstico")
-        st.write("Toma una foto o sube una imagen de tu cultivo para identificar posibles plagas y recibir recomendaciones.")
+        st.write("Toma una foto o sube una imagen de tu cultivo para identificar automáticamente la planta, posibles plagas y recibir recomendaciones.")
 
         col1, col2 = st.columns([1, 1])
 
         with col1:
             st.subheader("📷 Captura de Imagen")
             origen = st.radio("Origen de la imagen:", ["Subir Imagen", "Tomar Foto"])
-            cultivo = st.selectbox("Selecciona el cultivo:", ["Café", "Frijol", "Maíz", "Tomate", "Otro"])
             
             imagen_file = None
             if origen == "Subir Imagen":
@@ -491,15 +490,15 @@ else:
                             st.markdown(f"### {diagnostico_tflite} {badge_html}", unsafe_allow_html=True)
                             st.progress(confianza, text=f"Confianza TFLite: {confianza_pct}%")
 
-                        # Análisis multimodal con GPT-5.6 Luna
+                        # Análisis multimodal con GPT-5.6 Luna (detecta automáticamente la planta)
                         if client:
                             try:
                                 base64_image = encode_image_to_base64(img)
-                                prompt_analisis = f"""
-                                Analiza detalladamente esta imagen de cultivo. El usuario indicó que el cultivo es {cultivo}.
+                                prompt_analisis = """
+                                Analiza detalladamente esta imagen de cultivo.
                                 
                                 Proporciona el diagnóstico estructurado con estas secciones:
-                                1. **Identificación de la planta y problema:** Describe la planta y el hongo, plaga o deficiencia que detectas.
+                                1. **Identificación de la planta y problema:** Identifica primero la especie/variedad de la planta observada en la imagen y describe el hongo, plaga o deficiencia que detectas.
                                 2. **Estado y Gravedad:** Determina si el nivel de afección es Bajo, Medio o Alto.
                                 3. **Tratamientos Sugeridos:**
                                    - **Control Orgánico/Ecológico:** (Ingredientes caseros, bio-preparados).
@@ -536,7 +535,7 @@ else:
                                     conn = sqlite3.connect(DB_NAME)
                                     cursor = conn.cursor()
                                     cursor.execute("INSERT INTO historial (usuario, cultivo, diagnostico, confianza) VALUES (?, ?, ?, ?)",
-                                                   (st.session_state.usuario, cultivo, "Análisis GPT-5.6 Luna", 100.0))
+                                                   (st.session_state.usuario, "Auto-detectado", "Análisis GPT-5.6 Luna", 100.0))
                                     conn.commit()
                                     conn.close()
                                 except Exception:
