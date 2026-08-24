@@ -523,7 +523,8 @@ else:
                                             ],
                                         }
                                     ],
-                                    max_completion_tokens=800,
+                                    reasoning_effort="none",
+                                    max_completion_tokens=1500,
                                 )
                                 
                                 resultado_texto = response.choices[0].message.content
@@ -573,7 +574,9 @@ else:
                             
                             response = client.chat.completions.create(
                                 model="gpt-5.6-luna",
-                                messages=chat_history
+                                messages=chat_history,
+                                reasoning_effort="none",
+                                max_completion_tokens=1500
                             )
                             
                             respuesta_texto = response.choices[0].message.content
