@@ -4,8 +4,7 @@ import hashlib
 import os
 import base64
 import pandas as pd
-import numpy as np
-from PIL import Image, ImageOps
+from PIL import Image
 from openai import OpenAI
 
 # --- CONFIGURACIÓN DE PÁGINA ---
@@ -16,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ESTILOS CSS LIMPIOS Y PROFESIONALES (SIN SATURACIÓN NI EMOJIS REPETITIVOS) ---
+# --- ESTILOS CSS LIMPIOS Y PROFESIONALES ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -70,7 +69,6 @@ st.markdown("""
 
     p, span, label { color: var(--text-body); }
 
-    /* Tarjetas limpias y desahogadas */
     div[data-testid="stVerticalBlock"] > div > div[data-testid="stVerticalBlock"] {
         background-color: var(--card-bg) !important;
         border-radius: 12px !important;
@@ -93,30 +91,6 @@ st.markdown("""
     div.stButton > button:hover {
         background-color: var(--primary-btn-hover) !important;
         color: #ffffff !important;
-    }
-
-    .metric-card {
-        background-color: var(--card-bg);
-        border: 1px solid var(--card-border);
-        border-radius: 12px;
-        padding: 16px;
-        text-align: center;
-    }
-    .metric-card h3 {
-        margin: 0;
-        font-size: 1.6rem;
-        color: var(--primary-btn) !important;
-    }
-    .metric-card p {
-        margin: 4px 0 0 0;
-        font-size: 0.85rem;
-        color: var(--text-muted);
-    }
-
-    .stTabs [data-baseweb="tab"] {
-        height: 40px;
-        border-radius: 8px;
-        font-weight: 600;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -241,10 +215,9 @@ else:
     st.sidebar.caption("Panel de Control")
     st.sidebar.write("---")
     
-    # Navegación reestructurada según observaciones
     opcion = st.sidebar.radio(
         "Navegación",
-        ["Inicio y Reportes", "Detectar Plaga", "Asistente Virtual", "Catálogo y Tratamientos"]
+        ["Inicio e Historial", "Detectar Plaga", "Asistente Virtual", "Catálogo y Tratamientos"]
     )
     
     st.sidebar.write("---")
@@ -255,20 +228,11 @@ else:
         st.session_state.messages = []
         st.rerun()
 
-    # --- 1. INICIO Y REPORTES (INICIO + ESTADO + HISTORIAL FUSIONADOS) ---
+    # --- 1. INICIO E HISTORIAL (SIN TARJETAS FIJAS DE MÉTRICAS) ---
     if "Inicio" in opcion:
         st.title(f"Bienvenido, {st.session_state.nombre_completo}")
-        st.caption("Resumen general del estado de tus cultivos e historial de actividad.")
+        st.caption("Consulta el registro y la evolución de los diagnósticos de tus cultivos.")
         
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            st.markdown("""<div class="metric-card"><h3>Activo</h3><p>Estado del Sistema</p></div>""", unsafe_allow_html=True)
-        with c2:
-            st.markdown("""<div class="metric-card"><h3>28°C</h3><p>Temperatura Promedio</p></div>""", unsafe_allow_html=True)
-        with c3:
-            st.markdown("""<div class="metric-card"><h3>72%</h3><p>Humedad del Suelo</p></div>""", unsafe_allow_html=True)
-
-        st.write("---")
         st.subheader("Historial de Diagnósticos")
         
         try:
@@ -287,7 +251,7 @@ else:
         except Exception as e:
             st.error(f"Error al cargar historial: {e}")
 
-    # --- 2. DETECTAR PLAGA (DISEÑO DESAHOGADO Y LENGUAJE CLARO) ---
+    # --- 2. DETECTAR PLAGA ---
     elif "Detectar Plaga" in opcion:
         st.title("Diagnóstico de Cultivo")
         st.caption("Sube una imagen o toma una foto para analizar el estado de salud de tu muestra.")
@@ -357,7 +321,7 @@ else:
             else:
                 st.info("Carga una foto en el panel izquierdo para ver los resultados aquí.")
 
-    # --- 3. ASISTENTE VIRTUAL (ESTILIZADO Y LIMPIO) ---
+    # --- 3. ASISTENTE VIRTUAL ---
     elif "Asistente Virtual" in opcion:
         st.title("Asistente Agrónomo")
         st.caption("Consulta dudas sobre tratamiento de suelos, dosis o manejo de plagas.")
@@ -387,7 +351,7 @@ else:
                     except Exception as e:
                         st.error(f"Error: {e}")
 
-    # --- 4. CATÁLOGO Y TRATAMIENTOS (CON IMÁGENES DE REFERENCIA) ---
+    # --- 4. CATÁLOGO Y TRATAMIENTOS ---
     elif "Catálogo y Tratamientos" in opcion:
         st.title("Catálogo de Soluciones")
         st.caption("Guía de tratamientos orgánicos y preventivos para cultivos.")
