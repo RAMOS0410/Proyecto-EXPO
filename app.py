@@ -523,7 +523,7 @@ else:
                                             ],
                                         }
                                     ],
-                                    max_tokens=800,
+                                    max_completion_tokens=800,
                                 )
                                 
                                 resultado_texto = response.choices[0].message.content
