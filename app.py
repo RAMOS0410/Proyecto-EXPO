@@ -10,13 +10,13 @@ from openai import OpenAI
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
-    page_title="AGRO IA - Detección de Plagas", 
-    page_icon="🌱", 
+    page_title="AGRO IA", 
+    page_icon="🌿", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- ESTILOS CSS PERSONALIZADOS ---
+# --- ESTILOS CSS LIMPIOS Y PROFESIONALES (SIN SATURACIÓN NI EMOJIS REPETITIVOS) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -26,36 +26,30 @@ st.markdown("""
     }
 
     :root {
-        --bg-main: #f4f6f3;
+        --bg-main: #f8fafc;
         --card-bg: #ffffff;
-        --card-border: #e2e8e0;
-        --text-title: #344E41;
-        --text-body: #2d3748;
-        --text-muted: #6c757d;
-        --sidebar-bg: #344E41;
-        --sidebar-text: #f0f4f1;
-        --primary-btn: #3A5A40;
-        --primary-btn-hover: #588157;
-        --input-bg: #ffffff;
-        --input-text: #2d3748;
-        --input-border: #dad7cd;
+        --card-border: #e2e8f0;
+        --text-title: #0f172a;
+        --text-body: #334155;
+        --text-muted: #64748b;
+        --sidebar-bg: #1e293b;
+        --sidebar-text: #f8fafc;
+        --primary-btn: #15803d;
+        --primary-btn-hover: #166534;
     }
 
     @media (prefers-color-scheme: dark) {
         :root {
-            --bg-main: #121815;
-            --card-bg: #1e2621;
-            --card-border: #2d3831;
-            --text-title: #e2ece9;
-            --text-body: #d1d5db;
-            --text-muted: #9ca3af;
-            --sidebar-bg: #1a2820;
-            --sidebar-text: #f0f4f1;
-            --primary-btn: #3A5A40;
-            --primary-btn-hover: #588157;
-            --input-bg: #27332c;
-            --input-text: #f3f4f6;
-            --input-border: #3b4d42;
+            --bg-main: #0f172a;
+            --card-bg: #1e293b;
+            --card-border: #334155;
+            --text-title: #f8fafc;
+            --text-body: #cbd5e1;
+            --text-muted: #94a3b8;
+            --sidebar-bg: #0f172a;
+            --sidebar-text: #f8fafc;
+            --primary-btn: #16a34a;
+            --primary-btn-hover: #15803d;
         }
     }
 
@@ -68,104 +62,61 @@ st.markdown("""
     
     [data-testid="stSidebar"] * { color: var(--sidebar-text) !important; }
 
-    [data-testid="stSidebar"] .stRadio label {
-        padding: 10px 14px;
-        border-radius: 10px;
-        transition: background 0.2s ease;
-    }
-    
-    [data-testid="stSidebar"] .stRadio label:hover {
-        background-color: #3a5a40 !important;
-    }
-
     h1, h2, h3, h4 {
         color: var(--text-title) !important;
         font-weight: 700 !important;
+        letter-spacing: -0.02em;
     }
 
     p, span, label { color: var(--text-body); }
 
+    /* Tarjetas limpias y desahogadas */
     div[data-testid="stVerticalBlock"] > div > div[data-testid="stVerticalBlock"] {
         background-color: var(--card-bg) !important;
-        border-radius: 16px !important;
-        padding: 22px !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+        border-radius: 12px !important;
+        padding: 20px !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
         border: 1px solid var(--card-border) !important;
-        margin-bottom: 15px !important;
+        margin-bottom: 12px !important;
     }
 
     div.stButton > button {
         background-color: var(--primary-btn) !important;
         color: #ffffff !important;
-        border-radius: 12px !important;
+        border-radius: 8px !important;
         border: none !important;
         font-weight: 600 !important;
-        padding: 0.65rem 1.4rem !important;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        transition: all 0.3s ease !important;
+        padding: 0.6rem 1.2rem !important;
+        transition: all 0.2s ease !important;
     }
 
     div.stButton > button:hover {
         background-color: var(--primary-btn-hover) !important;
         color: #ffffff !important;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
-
-    .stTextInput input, .stSelectbox > div > div {
-        background-color: var(--input-bg) !important;
-        color: var(--input-text) !important;
-        border-radius: 10px !important;
-        border: 1px solid var(--input-border) !important;
-    }
-
-    .badge {
-        display: inline-block;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.82rem;
-        font-weight: 700;
-        text-align: center;
-    }
-    .badge-high { background-color: #fee2e2; color: #991b1b; }
-    .badge-medium { background-color: #fef3c7; color: #92400e; }
-    .badge-low { background-color: #e0e7ff; color: #3730a3; }
-    .badge-good { background-color: #d1fae5; color: #065f46; }
 
     .metric-card {
         background-color: var(--card-bg);
         border: 1px solid var(--card-border);
-        border-radius: 16px;
-        padding: 18px;
+        border-radius: 12px;
+        padding: 16px;
         text-align: center;
     }
     .metric-card h3 {
         margin: 0;
-        font-size: 1.8rem;
-        color: #3A5A40 !important;
+        font-size: 1.6rem;
+        color: var(--primary-btn) !important;
     }
     .metric-card p {
         margin: 4px 0 0 0;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         color: var(--text-muted);
     }
 
-    .stTabs [data-baseweb="tab-list"] { gap: 8px; }
-
     .stTabs [data-baseweb="tab"] {
-        height: 44px;
-        background-color: var(--card-bg);
-        border-radius: 10px;
-        color: var(--text-body);
+        height: 40px;
+        border-radius: 8px;
         font-weight: 600;
-        padding: 0 18px;
-        border: 1px solid var(--card-border);
-    }
-
-    .stTabs [aria-selected="true"] {
-        background-color: var(--primary-btn) !important;
-        color: #ffffff !important;
-        border-color: var(--primary-btn) !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -175,24 +126,8 @@ raw_key = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY", ""))
 api_key = str(raw_key).strip().strip('"').strip("'")
 client = OpenAI(api_key=api_key) if api_key else None
 
-# --- MODELO TF LITE (OPCIONAL) ---
-TFLITE_DISPONIBLE = False
-try:
-    from ai_edge_litert.interpreter import Interpreter
-    TFLITE_DISPONIBLE = True
-except ImportError:
-    try:
-        import tflite_runtime.interpreter as tflite
-        TFLITE_DISPONIBLE = True
-    except ImportError:
-        try:
-            import tensorflow.lite as tflite
-            TFLITE_DISPONIBLE = True
-        except ImportError:
-            TFLITE_DISPONIBLE = False
-
 # --- BASE DE DATOS LOCAL ---
-DB_NAME = "agroia_v3.db"
+DB_NAME = "agroia_v4.db"
 
 def init_db():
     conn = sqlite3.connect(DB_NAME)
@@ -203,8 +138,7 @@ def init_db():
             usuario TEXT UNIQUE NOT NULL,
             correo TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
-            nombre_completo TEXT,
-            rol TEXT DEFAULT 'Agricultor / Productor'
+            nombre_completo TEXT
         )
     ''')
     cursor.execute('''
@@ -213,7 +147,6 @@ def init_db():
             usuario TEXT,
             cultivo TEXT,
             diagnostico TEXT,
-            confianza REAL,
             fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
@@ -233,12 +166,9 @@ def registrar_usuario(usuario, correo, password, nombre):
                        (usuario.strip().lower(), correo.strip().lower(), hash_password(password), nombre))
         conn.commit()
         conn.close()
-        return True, "¡Usuario registrado exitosamente! Ya puedes iniciar sesión."
-    except sqlite3.IntegrityError as e:
-        err_msg = str(e).lower()
-        if "correo" in err_msg:
-            return False, "El correo electrónico ya está registrado."
-        return False, "El nombre de usuario ya existe."
+        return True, "Registro exitoso. Inicia sesión."
+    except sqlite3.IntegrityError:
+        return False, "El usuario o correo ya existe."
     except Exception as e:
         return False, f"Error: {e}"
 
@@ -246,26 +176,16 @@ def autenticar_usuario(identificador, password):
     try:
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
-        identificador_clean = identificador.strip().lower()
-        pass_hash = hash_password(password)
-        
-        cursor.execute("""
-            SELECT id, usuario, correo, password, nombre_completo, rol FROM usuarios 
-            WHERE usuario = ? OR correo = ?
-        """, (identificador_clean, identificador_clean))
-        
+        cursor.execute("SELECT id, usuario, correo, password, nombre_completo FROM usuarios WHERE usuario = ? OR correo = ?",
+                       (identificador.strip().lower(), identificador.strip().lower()))
         user = cursor.fetchone()
         conn.close()
         
-        if not user:
-            return None, "El usuario o correo no existe."
-        if user[3] == pass_hash:
+        if user and user[3] == hash_password(password):
             return user, "OK"
-        else:
-            return None, "Contraseña incorrecta."
-            
+        return None, "Usuario o contraseña incorrectos."
     except Exception as e:
-        return None, f"Error en BD: {e}"
+        return None, f"Error: {e}"
 
 def encode_image_to_base64(image_pil):
     import io
@@ -283,343 +203,208 @@ if "nombre_completo" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# --- PANTALLA DE LOGIN / REGISTRO ---
+# --- PANTALLA DE LOGIN ---
 if not st.session_state.autenticado:
     col1, col2, col3 = st.columns([1, 2, 1])
-    
     with col2:
-        st.markdown("<h1 style='text-align: center; margin-bottom: 0px;'>🌱 AGRO IA</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; font-weight: 500; margin-bottom: 25px;'>Inteligencia Artificial para el cuidado de tus cultivos</p>", unsafe_allow_html=True)
+        st.title("AGRO IA")
+        st.caption("Plataforma de Diagnóstico y Monitoreo Agrícola")
         
         tab1, tab2 = st.tabs(["Iniciar Sesión", "Registrarse"])
-        
         with tab1:
-            st.write("")
-            user_input = st.text_input("Usuario o Correo Electrónico", key="login_u")
-            pass_input = st.text_input("Contraseña", type="password", key="login_p")
-            st.write("")
-            
-            if st.button("Iniciar Sesión", use_container_width=True):
-                if user_input and pass_input:
-                    user, msj = autenticar_usuario(user_input, pass_input)
-                    if user:
-                        st.session_state.autenticado = True
-                        st.session_state.usuario = user[1]
-                        st.session_state.nombre_completo = user[4] if len(user) > 4 and user[4] else user[1]
-                        st.success("¡Bienvenido de nuevo!")
-                        st.rerun()
-                    else:
-                        st.error(msj)
+            user_input = st.text_input("Usuario o Correo", key="l_user")
+            pass_input = st.text_input("Contraseña", type="password", key="l_pass")
+            if st.button("Ingresar", use_container_width=True):
+                user, msj = autenticar_usuario(user_input, pass_input)
+                if user:
+                    st.session_state.autenticado = True
+                    st.session_state.usuario = user[1]
+                    st.session_state.nombre_completo = user[4] or user[1]
+                    st.rerun()
                 else:
-                    st.warning("Por favor completa todos los campos.")
-                    
+                    st.error(msj)
         with tab2:
-            st.write("")
-            new_nombre = st.text_input("Nombre Completo", key="reg_n")
-            new_user = st.text_input("Nombre de Usuario", key="reg_u")
-            new_email = st.text_input("Correo Electrónico", key="reg_e")
-            new_pass = st.text_input("Contraseña", type="password", key="reg_p")
-            new_pass2 = st.text_input("Confirmar Contraseña", type="password", key="reg_p2")
-            st.write("")
-            
-            if st.button("Registrar Cuenta", use_container_width=True):
-                if new_user and new_email and new_pass and new_nombre:
-                    if "@" not in new_email or "." not in new_email:
-                        st.error("Por favor ingresa un correo electrónico válido.")
-                    elif new_pass != new_pass2:
-                        st.error("Las contraseñas no coinciden.")
-                    else:
-                        exito, msj = registrar_usuario(new_user, new_email, new_pass, new_nombre)
-                        if exito:
-                            st.success(msj)
-                        else:
-                            st.error(msj)
+            n_name = st.text_input("Nombre Completo", key="r_name")
+            n_user = st.text_input("Usuario", key="r_user")
+            n_mail = st.text_input("Correo", key="r_mail")
+            n_pass = st.text_input("Contraseña", type="password", key="r_pass")
+            if st.button("Crear Cuenta", use_container_width=True):
+                ok, msj = registrar_usuario(n_user, n_mail, n_pass, n_name)
+                if ok:
+                    st.success(msj)
                 else:
-                    st.warning("Por favor completa todos los campos.")
+                    st.error(msj)
 
-# --- PANEL PRINCIPAL DE NAVEGACIÓN ---
+# --- PANEL PRINCIPAL ---
 else:
-    st.sidebar.markdown("# 🌱 AGRO IA")
-    st.sidebar.caption("Monitoreo Inteligente de Cultivos")
+    st.sidebar.title("AGRO IA")
+    st.sidebar.caption("Panel de Control")
     st.sidebar.write("---")
     
+    # Navegación reestructurada según observaciones
     opcion = st.sidebar.radio(
         "Navegación",
-        ["Inicio", "Detectar Plaga", "Asistente Virtual", "Historial", "Catálogo y Tratamientos", "Mi Perfil"]
+        ["Inicio y Reportes", "Detectar Plaga", "Asistente Virtual", "Catálogo y Tratamientos"]
     )
     
     st.sidebar.write("---")
-    st.sidebar.markdown(f"**Usuario:** {st.session_state.nombre_completo}")
-    st.sidebar.markdown("**Rol:** Agricultor")
-    st.sidebar.write("")
-    
+    st.sidebar.write(f"**Usuario:** {st.session_state.nombre_completo}")
     if st.sidebar.button("Cerrar Sesión", use_container_width=True):
         st.session_state.autenticado = False
         st.session_state.usuario = ""
-        st.session_state.nombre_completo = ""
         st.session_state.messages = []
         st.rerun()
 
-    @st.cache_data
-    def cargar_labels():
-        try:
-            with open("labels.txt", "r", encoding="utf-8") as f:
-                return [line.strip() for line in f.readlines()]
-        except Exception:
-            return []
-
-    def procesar_e_inferir(image):
-        if not TFLITE_DISPONIBLE:
-            return None, None
-            
-        try:
-            interpreter = Interpreter(model_path="model_unquant.tflite")
-        except NameError:
-            interpreter = tflite.Interpreter(model_path="model_unquant.tflite")
-            
-        interpreter.allocate_tensors()
-        input_details = interpreter.get_input_details()
-        output_details = interpreter.get_output_details()
-        
-        size = (224, 224)
-        image_resized = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
-        image_array = np.asarray(image_resized, dtype=np.float32)
-        normalized_image_array = (image_array / 127.5) - 1.0
-        data = np.expand_dims(normalized_image_array, axis=0)
-        
-        interpreter.set_tensor(input_details[0]['index'], data)
-        interpreter.invoke()
-        
-        predictions = interpreter.get_tensor(output_details[0]['index'])[0]
-        max_idx = np.argmax(predictions)
-        confianza = float(predictions[max_idx])
-        
-        labels = cargar_labels()
-        if labels and max_idx < len(labels):
-            diagnostico = labels[max_idx]
-            if " " in diagnostico:
-                diagnostico = diagnostico.split(" ", 1)[1]
-        else:
-            diagnostico = f"Clase {max_idx}"
-            
-        return diagnostico, confianza
-
-    # --- 1. INICIO ---
+    # --- 1. INICIO Y REPORTES (INICIO + ESTADO + HISTORIAL FUSIONADOS) ---
     if "Inicio" in opcion:
-        st.title(f"¡Hola, {st.session_state.nombre_completo}! 👋")
-        st.write("Este es el estado de tus cultivos hoy.")
+        st.title(f"Bienvenido, {st.session_state.nombre_completo}")
+        st.caption("Resumen general del estado de tus cultivos e historial de actividad.")
         
         c1, c2, c3 = st.columns(3)
         with c1:
-            st.markdown("""
-            <div class="metric-card">
-                <span class="badge badge-good">Óptimo</span>
-                <h3>Todo va bien</h3>
-                <p>3 cultivos monitoreados</p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown("""<div class="metric-card"><h3>Activo</h3><p>Estado del Sistema</p></div>""", unsafe_allow_html=True)
         with c2:
-            st.markdown("""
-            <div class="metric-card">
-                <span class="badge badge-low">Normal</span>
-                <h3>0 Alertas</h3>
-                <p>Sin plagas activas</p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown("""<div class="metric-card"><h3>28°C</h3><p>Temperatura Promedio</p></div>""", unsafe_allow_html=True)
         with c3:
-            st.markdown("""
-            <div class="metric-card">
-                <span class="badge badge-good">28°C</span>
-                <h3>Clima Estable</h3>
-                <p>Humedad del suelo: 72%</p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown("""<div class="metric-card"><h3>72%</h3><p>Humedad del Suelo</p></div>""", unsafe_allow_html=True)
 
         st.write("---")
-        st.subheader("🌾 Cultivos Registrados")
+        st.subheader("Historial de Diagnósticos")
         
-        col_c1, col_c2, col_c3 = st.columns(3)
-        with col_c1:
-            st.markdown("**🌽 Maíz**")
-            st.markdown("Salud: <span class='badge badge-good'>Buena</span>", unsafe_allow_html=True)
-        with col_c2:
-            st.markdown("**🫘 Frijol**")
-            st.markdown("Salud: <span class='badge badge-medium'>Regular</span>", unsafe_allow_html=True)
-        with col_c3:
-            st.markdown("**☕ Café**")
-            st.markdown("Salud: <span class='badge badge-good'>Buena</span>", unsafe_allow_html=True)
+        try:
+            conn = sqlite3.connect(DB_NAME)
+            df = pd.read_sql_query(
+                "SELECT fecha AS Fecha, cultivo AS Cultivo, diagnostico AS Resumen FROM historial WHERE usuario = ? ORDER BY fecha DESC", 
+                conn, 
+                params=(st.session_state.usuario,)
+            )
+            conn.close()
+            
+            if not df.empty:
+                st.dataframe(df, use_container_width=True)
+            else:
+                st.info("Aún no has realizado diagnósticos. Ve a la sección 'Detectar Plaga' para escanear una muestra.")
+        except Exception as e:
+            st.error(f"Error al cargar historial: {e}")
 
-    # --- 2. DETECTAR PLAGA ---
+    # --- 2. DETECTAR PLAGA (DISEÑO DESAHOGADO Y LENGUAJE CLARO) ---
     elif "Detectar Plaga" in opcion:
-        st.title("Nuevo Diagnóstico")
-        st.write("Toma una foto o sube una imagen de tu cultivo para identificar automáticamente la planta, posibles plagas y recibir recomendaciones de forma sencilla.")
+        st.title("Diagnóstico de Cultivo")
+        st.caption("Sube una imagen o toma una foto para analizar el estado de salud de tu muestra.")
 
         col1, col2 = st.columns([1, 1])
 
         with col1:
-            st.subheader("📷 Captura de Imagen")
-            origen = st.radio("Origen de la imagen:", ["Subir Imagen", "Tomar Foto"])
+            st.subheader("Entrada de Muestra")
+            origen = st.radio("Método de captura:", ["Subir Archivo", "Cámara Directa"])
             
             imagen_file = None
-            if origen == "Subir Imagen":
-                imagen_file = st.file_uploader("Formatos permitidos: JPG, PNG", type=["jpg", "png", "jpeg"])
+            if origen == "Subir Archivo":
+                imagen_file = st.file_uploader("Formatos: JPG, PNG", type=["jpg", "png", "jpeg"])
             else:
-                imagen_file = st.camera_input("Capturar foto del cultivo")
+                imagen_file = st.camera_input("Capturar foto")
 
-            if imagen_file is not None:
+            if imagen_file:
                 img = Image.open(imagen_file).convert("RGB")
-                st.image(img, caption="Vista previa de la muestra", use_container_width=True)
+                st.image(img, caption="Muestra cargada", use_container_width=True)
 
         with col2:
-            st.subheader("📋 Resultado del Análisis")
-            if imagen_file is not None:
-                if st.button("Analizar Hoja con IA", use_container_width=True):
-                    with st.spinner("Analizando la imagen de tu cultivo con GPT-5.6 Luna..."):
-                        # Inferencia opcional con modelo local TFLite
-                        diagnostico_tflite, confianza = None, None
-                        if TFLITE_DISPONIBLE:
-                            try:
-                                diagnostico_tflite, confianza = procesar_e_inferir(img)
-                            except Exception:
-                                pass
-
-                        if diagnostico_tflite and confianza:
-                            confianza_pct = round(confianza * 100, 2)
-                            es_sana = "sana" in diagnostico_tflite.lower() or "healthy" in diagnostico_tflite.lower()
-                            badge_html = "<span class='badge badge-good'>Saludable</span>" if es_sana else "<span class='badge badge-high'>Riesgo Detectado</span>"
-                            st.markdown(f"### {diagnostico_tflite} {badge_html}", unsafe_allow_html=True)
-                            st.progress(confianza, text=f"Confianza TFLite: {confianza_pct}%")
-
-                        # Análisis multimodal con GPT-5.6 Luna adaptado a lenguaje claro y cotidiano
+            st.subheader("Informe del Diagnóstico")
+            if imagen_file:
+                if st.button("Ejecutar Análisis", use_container_width=True):
+                    with st.spinner("Procesando imagen..."):
                         if client:
                             try:
                                 base64_image = encode_image_to_base64(img)
                                 prompt_analisis = """
-                                Analiza detalladamente esta imagen de cultivo. 
-                                Usa un lenguaje muy claro, sencillo, directo y fácil de entender para un agricultor de campo (evita tecnicismos innecesarios o explicaciones científicas muy complejas; si mencionas nombres científicos o términos técnicos, explica inmediatamente qué significan con palabras sencillas o cómo se les conoce comúnmente en el campo).
-
-                                Estructura la respuesta de la siguiente forma:
-                                1. **Planta e Identificación del Problema:** ¿Qué cultivo es? ¿Qué enfermedad, mancha, hongo, plaga o daño en la hoja estás viendo? Explicado de forma cotidiana.
-                                2. **Nivel de Daño:** ¿Qué tan grave está la planta? (Leve, Medio o Grave).
-                                3. **¿Cómo Curarla y Tratarla?:**
-                                   - **Remedios Caseros / Soluciones Orgánicas:** Opción práctica y accesible con ingredientes naturales o de uso común.
-                                   - **Tratamiento de Tienda (Químico/Comercial):** Qué tipo de producto comprar en la agropecuaria si la plaga está muy avanzada.
-                                4. **Consejos para Cuidar el Cultivo (Prevención):** Recomendaciones sencillas para evitar que le vuelva a dar a las demás plantas.
+                                Analiza esta imagen agrícola. Explica todo con lenguaje muy sencillo, directo y fácil de entender.
+                                
+                                Responde en estas 4 secciones claras:
+                                1. Planta y Problema Detectado (Especie y daño visto en palabras sencillas).
+                                2. Nivel de Gravedad (Bajo, Medio o Alto).
+                                3. Soluciones Recomendadas (Remedios caseros orgánicos y opción comercial de tienda).
+                                4. Prevención (Consejos simples para evitar que vuelva a suceder).
                                 """
                                 
                                 response = client.chat.completions.create(
                                     model="gpt-5.6-luna",
-                                    messages=[
-                                        {
-                                            "role": "user",
-                                            "content": [
-                                                {"type": "text", "text": prompt_analisis},
-                                                {
-                                                    "type": "image_url",
-                                                    "image_url": {
-                                                        "url": f"data:image/jpeg;base64,{base64_image}"
-                                                    },
-                                                },
-                                            ],
-                                        }
-                                    ],
+                                    messages=[{
+                                        "role": "user",
+                                        "content": [
+                                            {"type": "text", "text": prompt_analisis},
+                                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+                                        ]
+                                    }],
                                     reasoning_effort="none",
-                                    max_completion_tokens=1500,
+                                    max_completion_tokens=1200
                                 )
                                 
-                                resultado_texto = response.choices[0].message.content
-                                st.markdown("---")
-                                st.markdown("### 🔍 Diagnóstico e Informe Agrónomo (GPT-5.6 Luna)")
-                                st.markdown(resultado_texto)
+                                resultado = response.choices[0].message.content
+                                st.markdown(resultado)
                                 
-                                try:
-                                    conn = sqlite3.connect(DB_NAME)
-                                    cursor = conn.cursor()
-                                    cursor.execute("INSERT INTO historial (usuario, cultivo, diagnostico, confianza) VALUES (?, ?, ?, ?)",
-                                                   (st.session_state.usuario, "Auto-detectado", "Análisis GPT-5.6 Luna", 100.0))
-                                    conn.commit()
-                                    conn.close()
-                                except Exception:
-                                    pass
-
+                                # Guardar en base de datos
+                                conn = sqlite3.connect(DB_NAME)
+                                cursor = conn.cursor()
+                                cursor.execute("INSERT INTO historial (usuario, cultivo, diagnostico) VALUES (?, ?, ?)",
+                                               (st.session_state.usuario, "Auto-detectado", resultado[:100] + "..."))
+                                conn.commit()
+                                conn.close()
+                                
                             except Exception as e:
-                                st.error(f"Error al comunicar con la API de OpenAI: {e}")
+                                st.error(f"Error al analizar: {e}")
                         else:
-                            st.error("No se encontró la API Key de OpenAI configurada. Agrégala en Secrets de Streamlit (`OPENAI_API_KEY`).")
+                            st.error("No hay API Key configurada.")
             else:
-                st.info("Sube o toma una foto en el panel izquierdo para obtener el diagnóstico.")
+                st.info("Carga una foto en el panel izquierdo para ver los resultados aquí.")
 
-    # --- 3. ASISTENTE VIRTUAL ---
+    # --- 3. ASISTENTE VIRTUAL (ESTILIZADO Y LIMPIO) ---
     elif "Asistente Virtual" in opcion:
-        st.title("Asistente Agrónomo Virtual")
-        st.write("Resuelve tus dudas sobre dosis, fertilizantes o control orgánico de plagas.")
+        st.title("Asistente Agrónomo")
+        st.caption("Consulta dudas sobre tratamiento de suelos, dosis o manejo de plagas.")
 
-        if not client:
-            st.error("⚠️ No se detectó ninguna API Key de OpenAI. Agrégala en `.streamlit/secrets.toml` bajo el nombre `OPENAI_API_KEY`.")
-        else:
-            for message in st.session_state.messages:
-                with st.chat_message(message["role"]):
-                    st.markdown(message["content"])
+        for msg in st.session_state.messages:
+            with st.chat_message(msg["role"]):
+                st.markdown(msg["content"])
 
-            if prompt := st.chat_input("Escribe tu consulta agrícola aquí..."):
-                st.session_state.messages.append({"role": "user", "content": prompt})
-                with st.chat_message("user"):
-                    st.markdown(prompt)
+        if prompt := st.chat_input("Escribe tu pregunta agrícola aquí..."):
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.markdown(prompt)
 
-                with st.chat_message("assistant"):
-                    with st.spinner("Consultando información agronómica..."):
-                        try:
-                            system_instruction = {"role": "system", "content": "Eres AGRO IA, un agrónomo virtual experto y muy cercano al agricultor. Responde con un lenguaje sencillo, claro y muy fácil de entender sin enredos técnicos."}
-                            chat_history = [system_instruction] + st.session_state.messages
-                            
-                            response = client.chat.completions.create(
-                                model="gpt-5.6-luna",
-                                messages=chat_history,
-                                reasoning_effort="none",
-                                max_completion_tokens=1500
-                            )
-                            
-                            respuesta_texto = response.choices[0].message.content
-                            st.markdown(respuesta_texto)
-                            st.session_state.messages.append({"role": "assistant", "content": respuesta_texto})
-                        except Exception as e:
-                            st.error(f"Error al comunicar con OpenAI: {e}")
+            with st.chat_message("assistant"):
+                if client:
+                    try:
+                        history = [{"role": "system", "content": "Eres un experto agrónomo que responde en español sencillo, directo y profesional."}] + st.session_state.messages
+                        res = client.chat.completions.create(
+                            model="gpt-5.6-luna",
+                            messages=history,
+                            reasoning_effort="none",
+                            max_completion_tokens=1000
+                        )
+                        text = res.choices[0].message.content
+                        st.markdown(text)
+                        st.session_state.messages.append({"role": "assistant", "content": text})
+                    except Exception as e:
+                        st.error(f"Error: {e}")
 
-    # --- 4. HISTORIAL ---
-    elif "Historial" in opcion:
-        st.title("Historial de Diagnósticos")
-        try:
-            conn = sqlite3.connect(DB_NAME)
-            df = pd.read_sql_query("SELECT cultivo AS Cultivo, diagnostico AS Diagnostico, confianza AS Confianza_Pct, fecha AS Fecha FROM historial WHERE usuario = ? ORDER BY fecha DESC", conn, params=(st.session_state.usuario,))
-            conn.close()
-            if not df.empty:
-                st.dataframe(df, use_container_width=True)
-            else:
-                st.info("Aún no tienes análisis guardados.")
-        except Exception:
-            st.info("No hay registros en la base de datos.")
-
-    # --- 5. CATÁLOGO Y TRATAMIENTOS ---
+    # --- 4. CATÁLOGO Y TRATAMIENTOS (CON IMÁGENES DE REFERENCIA) ---
     elif "Catálogo y Tratamientos" in opcion:
-        st.title("Tratamientos y Prevención")
+        st.title("Catálogo de Soluciones")
+        st.caption("Guía de tratamientos orgánicos y preventivos para cultivos.")
         
-        col_cat1, col_cat2 = st.columns(2)
+        col_cat1, col_cat2, col_cat3 = st.columns(3)
+        
         with col_cat1:
-            st.markdown("### 🧪 Fungicidas Orgánicos")
-            st.markdown("* **Oxicloruro de Cobre:** Control de roya y manchas en la hoja.")
-            st.markdown("* **Jabón Potásico:** Control de pulgón, mosquita blanca y araña roja.")
-            st.markdown("* **Caldo Bordelés:** Excelente preventivo contra hongos de la humedad.")
+            st.image("https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=400", caption="Fungicidas Orgánicos", use_container_width=True)
+            st.markdown("**Oxicloruro de Cobre**")
+            st.write("Efectivo para el control preventivo de roya y manchas en hojas.")
+            
         with col_cat2:
-            st.markdown("### 🛡️ Buenas Prácticas")
-            st.markdown("* **Rotación:** Cambiar cultivos por temporada.")
-            st.markdown("* **Podas sanitarias:** Retirar hojas enfermas o secas a tiempo.")
-            st.markdown("* **Ventilación:** Mantener suficiente espacio entre plantas.")
-
-    # --- 6. MI PERFIL ---
-    elif "Mi Perfil" in opcion:
-        st.title("Mi Perfil")
-        
-        st.markdown(f"**Nombre:** {st.session_state.nombre_completo}")
-        st.markdown(f"**Usuario:** {st.session_state.usuario}")
-        st.markdown("**Rol:** Agricultor / Productor")
-        st.markdown("**Estado:** <span class='badge badge-good'>Activo</span>", unsafe_allow_html=True)
+            st.image("https://images.unsplash.com/photo-1615811361523-6bd03d7748e7?w=400", caption="Jabón Potásico", use_container_width=True)
+            st.markdown("**Jabón Potásico**")
+            st.write("Ideal para combatir pulgones, mosquita blanca y ácaros de forma ecológica.")
+            
+        with col_cat3:
+            st.image("https://images.unsplash.com/photo-1592417817098-8f3d6ef23a81?w=400", caption="Prevención de Suelo", use_container_width=True)
+            st.markdown("**Caldo Bordelés**")
+            st.write("Mezcla de sulfato de cobre y cal para prevenir bacterias y hongos.")
