@@ -2,11 +2,11 @@ import streamlit as st
 import sqlite3
 import hashlib
 import os
-import time
+import base64
 import pandas as pd
 import numpy as np
 from PIL import Image, ImageOps
-import google.generativeai as genai
+from openai import OpenAI
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
@@ -59,18 +59,14 @@ st.markdown("""
         }
     }
 
-    .stApp {
-        background-color: var(--bg-main) !important;
-    }
+    .stApp { background-color: var(--bg-main) !important; }
 
     [data-testid="stSidebar"] {
         background-color: var(--sidebar-bg) !important;
         padding-top: 1rem;
     }
     
-    [data-testid="stSidebar"] * {
-        color: var(--sidebar-text) !important;
-    }
+    [data-testid="stSidebar"] * { color: var(--sidebar-text) !important; }
 
     [data-testid="stSidebar"] .stRadio label {
         padding: 10px 14px;
@@ -87,9 +83,7 @@ st.markdown("""
         font-weight: 700 !important;
     }
 
-    p, span, label {
-        color: var(--text-body);
-    }
+    p, span, label { color: var(--text-body); }
 
     div[data-testid="stVerticalBlock"] > div > div[data-testid="stVerticalBlock"] {
         background-color: var(--card-bg) !important;
@@ -156,9 +150,7 @@ st.markdown("""
         color: var(--text-muted);
     }
 
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-    }
+    .stTabs [data-baseweb="tab-list"] { gap: 8px; }
 
     .stTabs [data-baseweb="tab"] {
         height: 44px;
@@ -178,14 +170,12 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- OBTENCIÓN Y CONFIGURACIÓN DE API KEY ---
-raw_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
+# --- CONFIGURACIÓN CLIENTE OPENAI ---
+raw_key = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY", ""))
 api_key = str(raw_key).strip().strip('"').strip("'")
+client = OpenAI(api_key=api_key) if api_key else None
 
-if api_key:
-    genai.configure(api_key=api_key)
-
-# --- INTENTO DE IMPORTAR TFLITE ---
+# --- MODELO TF LITE (OPCIONAL) ---
 TFLITE_DISPONIBLE = False
 try:
     from ai_edge_litert.interpreter import Interpreter
@@ -201,6 +191,7 @@ except ImportError:
         except ImportError:
             TFLITE_DISPONIBLE = False
 
+# --- BASE DE DATOS LOCAL ---
 DB_NAME = "agroia_v3.db"
 
 def init_db():
@@ -276,6 +267,13 @@ def autenticar_usuario(identificador, password):
     except Exception as e:
         return None, f"Error en BD: {e}"
 
+def encode_image_to_base64(image_pil):
+    import io
+    buffered = io.BytesIO()
+    image_pil.save(buffered, format="JPEG")
+    return base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+# --- ESTADO DE SESIÓN ---
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
 if "usuario" not in st.session_state:
@@ -285,7 +283,7 @@ if "nombre_completo" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# --- PANTALLA DE AUTENTICACIÓN ---
+# --- PANTALLA DE LOGIN / REGISTRO ---
 if not st.session_state.autenticado:
     col1, col2, col3 = st.columns([1, 2, 1])
     
@@ -339,7 +337,7 @@ if not st.session_state.autenticado:
                 else:
                     st.warning("Por favor completa todos los campos.")
 
-# --- INTERFAZ PRINCIPAL ---
+# --- PANEL PRINCIPAL DE NAVEGACIÓN ---
 else:
     st.sidebar.markdown("# 🌱 AGRO IA")
     st.sidebar.caption("Monitoreo Inteligente de Cultivos")
@@ -406,7 +404,7 @@ else:
             
         return diagnostico, confianza
 
-    # --- VISTA: INICIO ---
+    # --- 1. INICIO ---
     if "Inicio" in opcion:
         st.title(f"¡Hola, {st.session_state.nombre_completo}! 👋")
         st.write("Este es el estado de tus cultivos hoy.")
@@ -451,7 +449,7 @@ else:
             st.markdown("**☕ Café**")
             st.markdown("Salud: <span class='badge badge-good'>Buena</span>", unsafe_allow_html=True)
 
-    # --- VISTA: DETECTAR PLAGA ---
+    # --- 2. DETECTAR PLAGA ---
     elif "Detectar Plaga" in opcion:
         st.title("Nuevo Diagnóstico")
         st.write("Toma una foto o sube una imagen de tu cultivo para identificar posibles plagas y recibir recomendaciones.")
@@ -477,7 +475,8 @@ else:
             st.subheader("📋 Resultado del Análisis")
             if imagen_file is not None:
                 if st.button("Analizar Hoja con IA", use_container_width=True):
-                    with st.spinner("Analizando la imagen de tu cultivo..."):
+                    with st.spinner("Analizando la imagen de tu cultivo con GPT-5.6 Luna..."):
+                        # Inferencia opcional con modelo local TFLite
                         diagnostico_tflite, confianza = None, None
                         if TFLITE_DISPONIBLE:
                             try:
@@ -492,66 +491,70 @@ else:
                             st.markdown(f"### {diagnostico_tflite} {badge_html}", unsafe_allow_html=True)
                             st.progress(confianza, text=f"Confianza TFLite: {confianza_pct}%")
 
-                        if api_key:
-                            prompt_analisis = f"""
-                            Analiza detalladamente esta imagen de cultivo. El usuario indicó que el cultivo es {cultivo}.
-                            
-                            Proporciona el diagnóstico estructurado con estas secciones:
-                            1. **Identificación de la planta y problema:** Describe la planta y el hongo, plaga o deficiencia que detectas.
-                            2. **Estado y Gravedad:** Determina si el nivel de afección es Bajo, Medio o Alto.
-                            3. **Tratamientos Sugeridos:**
-                               - **Control Orgánico/Ecológico:** (Ingredientes caseros, bio-preparados).
-                               - **Control Químico:** (Fungicidas o insecticidas recomendados).
-                            4. **Prevención:** Medidas agronómicas directas.
-                            """
-                            
-                            exito_vision = False
-                            ultimo_error_vision = ""
-                            for intento in range(3):
+                        # Análisis multimodal con GPT-5.6 Luna
+                        if client:
+                            try:
+                                base64_image = encode_image_to_base64(img)
+                                prompt_analisis = f"""
+                                Analiza detalladamente esta imagen de cultivo. El usuario indicó que el cultivo es {cultivo}.
+                                
+                                Proporciona el diagnóstico estructurado con estas secciones:
+                                1. **Identificación de la planta y problema:** Describe la planta y el hongo, plaga o deficiencia que detectas.
+                                2. **Estado y Gravedad:** Determina si el nivel de afección es Bajo, Medio o Alto.
+                                3. **Tratamientos Sugeridos:**
+                                   - **Control Orgánico/Ecológico:** (Ingredientes caseros, bio-preparados).
+                                   - **Control Químico:** (Fungicidas o insecticidas recomendados).
+                                4. **Prevención:** Medidas agronómicas directas.
+                                """
+                                
+                                response = client.chat.completions.create(
+                                    model="gpt-5.6-luna",
+                                    messages=[
+                                        {
+                                            "role": "user",
+                                            "content": [
+                                                {"type": "text", "text": prompt_analisis},
+                                                {
+                                                    "type": "image_url",
+                                                    "image_url": {
+                                                        "url": f"data:image/jpeg;base64,{base64_image}"
+                                                    },
+                                                },
+                                            ],
+                                        }
+                                    ],
+                                    max_tokens=800,
+                                )
+                                
+                                resultado_texto = response.choices[0].message.content
+                                st.markdown("---")
+                                st.markdown("### 🔍 Diagnóstico e Informe Agrónomo (GPT-5.6 Luna)")
+                                st.markdown(resultado_texto)
+                                
                                 try:
-                                    model = genai.GenerativeModel('gemini-1.5-flash')
-                                    response = model.generate_content([img, prompt_analisis])
-                                    
-                                    st.markdown("---")
-                                    st.markdown("### 🔍 Diagnóstico e Informe Agrónomo (Gemini IA)")
-                                    st.markdown(response.text)
-                                    
-                                    try:
-                                        conn = sqlite3.connect(DB_NAME)
-                                        cursor = conn.cursor()
-                                        cursor.execute("INSERT INTO historial (usuario, cultivo, diagnostico, confianza) VALUES (?, ?, ?, ?)",
-                                                       (st.session_state.usuario, cultivo, "Análisis Gemini Vision", 100.0))
-                                        conn.commit()
-                                        conn.close()
-                                    except Exception:
-                                        pass
-                                    
-                                    exito_vision = True
-                                    break
-                                except Exception as e_gemini:
-                                    ultimo_error_vision = str(e_gemini)
-                                    if any(term in ultimo_error_vision.upper() for term in ["429", "RESOURCE_EXHAUSTED", "503", "UNAVAILABLE", "HIGH DEMAND"]) and intento < 2:
-                                        time.sleep(5)
-                                    else:
-                                        break
-                            
-                            if not exito_vision:
-                                if "429" in ultimo_error_vision or "RESOURCE_EXHAUSTED" in ultimo_error_vision:
-                                    st.warning("⏳ Alcanzaste el límite de consultas diarias o por minuto. Espera un momento antes de volver a presionar 'Analizar Hoja con IA'.")
-                                else:
-                                    st.error(f"Error al comunicar con la API: {ultimo_error_vision}")
+                                    conn = sqlite3.connect(DB_NAME)
+                                    cursor = conn.cursor()
+                                    cursor.execute("INSERT INTO historial (usuario, cultivo, diagnostico, confianza) VALUES (?, ?, ?, ?)",
+                                                   (st.session_state.usuario, cultivo, "Análisis GPT-5.6 Luna", 100.0))
+                                    conn.commit()
+                                    conn.close()
+                                except Exception:
+                                    pass
+
+                            except Exception as e:
+                                st.error(f"Error al comunicar con la API de OpenAI: {e}")
                         else:
-                            st.error("No se encontró la API Key de Gemini configurada. Agrégala en la sección Secrets de Streamlit.")
+                            st.error("No se encontró la API Key de OpenAI configurada. Agrégala en Secrets de Streamlit (`OPENAI_API_KEY`).")
             else:
                 st.info("Sube o toma una foto en el panel izquierdo para obtener el diagnóstico.")
 
-    # --- VISTA: ASISTENTE VIRTUAL ---
+    # --- 3. ASISTENTE VIRTUAL ---
     elif "Asistente Virtual" in opcion:
         st.title("Asistente Agrónomo Virtual")
         st.write("Resuelve tus dudas sobre dosis, fertilizantes o control orgánico de plagas.")
 
-        if not api_key:
-            st.error("⚠️ No se detectó ninguna API Key. Agrégala en tu archivo `.streamlit/secrets.toml` o en la sección Secrets de Streamlit Cloud.")
+        if not client:
+            st.error("⚠️ No se detectó ninguna API Key de OpenAI. Agrégala en `.streamlit/secrets.toml` bajo el nombre `OPENAI_API_KEY`.")
         else:
             for message in st.session_state.messages:
                 with st.chat_message(message["role"]):
@@ -564,34 +567,22 @@ else:
 
                 with st.chat_message("assistant"):
                     with st.spinner("Consultando información agronómica..."):
-                        exito_chat = False
-                        ultimo_error = ""
-                        
-                        for intento in range(3):
-                            try:
-                                model = genai.GenerativeModel(
-                                    'gemini-1.5-flash',
-                                    system_instruction="Eres AGRO IA, un agrónomo virtual experto. Da respuestas concisas, prácticas y amables."
-                                )
-                                response = model.generate_content(prompt)
-                                st.markdown(response.text)
-                                st.session_state.messages.append({"role": "assistant", "content": response.text})
-                                exito_chat = True
-                                break
-                            except Exception as e:
-                                ultimo_error = str(e)
-                                if any(term in ultimo_error.upper() for term in ["429", "RESOURCE_EXHAUSTED", "503", "UNAVAILABLE", "HIGH DEMAND"]) and intento < 2:
-                                    time.sleep(5)
-                                else:
-                                    break
-                        
-                        if not exito_chat:
-                            if "429" in ultimo_error or "RESOURCE_EXHAUSTED" in ultimo_error:
-                                st.warning("⏳ Límite de peticiones alcanzado. Espera un momento antes de volver a preguntar.")
-                            else:
-                                st.error(f"Error al comunicar con la API: {ultimo_error}")
+                        try:
+                            system_instruction = {"role": "system", "content": "Eres AGRO IA, un agrónomo virtual experto. Da respuestas concisas, prácticas y amables."}
+                            chat_history = [system_instruction] + st.session_state.messages
+                            
+                            response = client.chat.completions.create(
+                                model="gpt-5.6-luna",
+                                messages=chat_history
+                            )
+                            
+                            respuesta_texto = response.choices[0].message.content
+                            st.markdown(respuesta_texto)
+                            st.session_state.messages.append({"role": "assistant", "content": respuesta_texto})
+                        except Exception as e:
+                            st.error(f"Error al comunicar con OpenAI: {e}")
 
-    # --- VISTA: HISTORIAL ---
+    # --- 4. HISTORIAL ---
     elif "Historial" in opcion:
         st.title("Historial de Diagnósticos")
         try:
@@ -605,7 +596,7 @@ else:
         except Exception:
             st.info("No hay registros en la base de datos.")
 
-    # --- VISTA: CATÁLOGO Y TRATAMIENTOS ---
+    # --- 5. CATÁLOGO Y TRATAMIENTOS ---
     elif "Catálogo y Tratamientos" in opcion:
         st.title("Tratamientos y Prevención")
         
@@ -621,7 +612,7 @@ else:
             st.markdown("* **Podas sanitarias:** Retirar hojas enfermas a tiempo.")
             st.markdown("* **Ventilación:** Mantener suficiente distancia entre plantas.")
 
-    # --- VISTA: MI PERFIL ---
+    # --- 6. MI PERFIL ---
     elif "Mi Perfil" in opcion:
         st.title("Mi Perfil")
         
