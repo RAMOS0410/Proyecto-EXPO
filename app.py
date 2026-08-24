@@ -92,6 +92,50 @@ st.markdown("""
         background-color: var(--primary-btn-hover) !important;
         color: #ffffff !important;
     }
+
+    /* --- NAVEGACIÓN DEL SIDEBAR (st.radio) MÁS GRANDE Y VISIBLE --- */
+    [data-testid="stSidebar"] div[role="radiogroup"] {
+        gap: 6px !important;
+    }
+
+    [data-testid="stSidebar"] div[role="radiogroup"] label {
+        display: flex !important;
+        align-items: center !important;
+        width: 100% !important;
+        padding: 12px 14px !important;
+        border-radius: 10px !important;
+        background-color: rgba(255, 255, 255, 0.04) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        margin-bottom: 4px !important;
+        transition: all 0.2s ease !important;
+        cursor: pointer !important;
+    }
+
+    [data-testid="stSidebar"] div[role="radiogroup"] label:hover {
+        background-color: rgba(255, 255, 255, 0.10) !important;
+        border-color: rgba(255, 255, 255, 0.20) !important;
+        transform: translateX(2px);
+    }
+
+    /* Texto de cada opción del menú */
+    [data-testid="stSidebar"] div[role="radiogroup"] label p {
+        font-size: 17px !important;
+        font-weight: 600 !important;
+        letter-spacing: -0.01em;
+    }
+
+    /* Círculo del radio, más grande */
+    [data-testid="stSidebar"] div[role="radiogroup"] label > div:first-child {
+        transform: scale(1.35);
+        margin-right: 10px !important;
+    }
+
+    /* Opción actualmente seleccionada, resaltada en verde */
+    [data-testid="stSidebar"] div[role="radiogroup"] label[data-checked="true"],
+    [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
+        background-color: rgba(21, 128, 61, 0.25) !important;
+        border-color: var(--primary-btn) !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
