@@ -452,7 +452,7 @@ else:
     # --- 2. DETECTAR PLAGA ---
     elif "Detectar Plaga" in opcion:
         st.title("Nuevo Diagnóstico")
-        st.write("Toma una foto o sube una imagen de tu cultivo para identificar automáticamente la planta, posibles plagas y recibir recomendaciones.")
+        st.write("Toma una foto o sube una imagen de tu cultivo para identificar automáticamente la planta, posibles plagas y recibir recomendaciones de forma sencilla.")
 
         col1, col2 = st.columns([1, 1])
 
@@ -490,20 +490,21 @@ else:
                             st.markdown(f"### {diagnostico_tflite} {badge_html}", unsafe_allow_html=True)
                             st.progress(confianza, text=f"Confianza TFLite: {confianza_pct}%")
 
-                        # Análisis multimodal con GPT-5.6 Luna (detecta automáticamente la planta)
+                        # Análisis multimodal con GPT-5.6 Luna adaptado a lenguaje claro y cotidiano
                         if client:
                             try:
                                 base64_image = encode_image_to_base64(img)
                                 prompt_analisis = """
-                                Analiza detalladamente esta imagen de cultivo.
-                                
-                                Proporciona el diagnóstico estructurado con estas secciones:
-                                1. **Identificación de la planta y problema:** Identifica primero la especie/variedad de la planta observada en la imagen y describe el hongo, plaga o deficiencia que detectas.
-                                2. **Estado y Gravedad:** Determina si el nivel de afección es Bajo, Medio o Alto.
-                                3. **Tratamientos Sugeridos:**
-                                   - **Control Orgánico/Ecológico:** (Ingredientes caseros, bio-preparados).
-                                   - **Control Químico:** (Fungicidas o insecticidas recomendados).
-                                4. **Prevención:** Medidas agronómicas directas.
+                                Analiza detalladamente esta imagen de cultivo. 
+                                Usa un lenguaje muy claro, sencillo, directo y fácil de entender para un agricultor de campo (evita tecnicismos innecesarios o explicaciones científicas muy complejas; si mencionas nombres científicos o términos técnicos, explica inmediatamente qué significan con palabras sencillas o cómo se les conoce comúnmente en el campo).
+
+                                Estructura la respuesta de la siguiente forma:
+                                1. **Planta e Identificación del Problema:** ¿Qué cultivo es? ¿Qué enfermedad, mancha, hongo, plaga o daño en la hoja estás viendo? Explicado de forma cotidiana.
+                                2. **Nivel de Daño:** ¿Qué tan grave está la planta? (Leve, Medio o Grave).
+                                3. **¿Cómo Curarla y Tratarla?:**
+                                   - **Remedios Caseros / Soluciones Orgánicas:** Opción práctica y accesible con ingredientes naturales o de uso común.
+                                   - **Tratamiento de Tienda (Químico/Comercial):** Qué tipo de producto comprar en la agropecuaria si la plaga está muy avanzada.
+                                4. **Consejos para Cuidar el Cultivo (Prevención):** Recomendaciones sencillas para evitar que le vuelva a dar a las demás plantas.
                                 """
                                 
                                 response = client.chat.completions.create(
@@ -568,7 +569,7 @@ else:
                 with st.chat_message("assistant"):
                     with st.spinner("Consultando información agronómica..."):
                         try:
-                            system_instruction = {"role": "system", "content": "Eres AGRO IA, un agrónomo virtual experto. Da respuestas concisas, prácticas y amables."}
+                            system_instruction = {"role": "system", "content": "Eres AGRO IA, un agrónomo virtual experto y muy cercano al agricultor. Responde con un lenguaje sencillo, claro y muy fácil de entender sin enredos técnicos."}
                             chat_history = [system_instruction] + st.session_state.messages
                             
                             response = client.chat.completions.create(
@@ -605,14 +606,14 @@ else:
         col_cat1, col_cat2 = st.columns(2)
         with col_cat1:
             st.markdown("### 🧪 Fungicidas Orgánicos")
-            st.markdown("* **Oxicloruro de Cobre:** Control de roya y antracnosis.")
-            st.markdown("* **Jabón Potásico:** Control de pulgón y araña roja.")
-            st.markdown("* **Caldo Bordelés:** Excelente preventivo contra hongos.")
+            st.markdown("* **Oxicloruro de Cobre:** Control de roya y manchas en la hoja.")
+            st.markdown("* **Jabón Potásico:** Control de pulgón, mosquita blanca y araña roja.")
+            st.markdown("* **Caldo Bordelés:** Excelente preventivo contra hongos de la humedad.")
         with col_cat2:
             st.markdown("### 🛡️ Buenas Prácticas")
             st.markdown("* **Rotación:** Cambiar cultivos por temporada.")
-            st.markdown("* **Podas sanitarias:** Retirar hojas enfermas a tiempo.")
-            st.markdown("* **Ventilación:** Mantener suficiente distancia entre plantas.")
+            st.markdown("* **Podas sanitarias:** Retirar hojas enfermas o secas a tiempo.")
+            st.markdown("* **Ventilación:** Mantener suficiente espacio entre plantas.")
 
     # --- 6. MI PERFIL ---
     elif "Mi Perfil" in opcion:
