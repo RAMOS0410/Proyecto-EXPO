@@ -6,9 +6,9 @@ import pandas as pd
 from PIL import Image
 from openai import OpenAI
 import streamlit as st
+import extra_streamlit_components as stx
 
 # --- CARGAR FAVICON ---
-# Intenta cargar 'logo.png' si existe en la carpeta; si no, usa el emoji por defecto
 try:
     favicon_img = Image.open("logo.png")
 except Exception:
@@ -21,6 +21,13 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# --- GESTOR DE COOKIES ---
+@st.cache_resource
+def get_cookie_manager():
+    return stx.CookieManager()
+
+cookie_manager = get_cookie_manager()
 
 # --- ESTILOS CSS ---
 st.markdown("""
@@ -169,13 +176,20 @@ def encode_image_to_base64(image_pil):
     image_pil.save(buffered, format="JPEG")
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-# --- ESTADO DE SESIÓN ---
+# --- PERSISTENCIA DE SESIÓN VÍA COOKIES ---
+cookie_user = cookie_manager.get(cookie="agroia_user")
+cookie_name = cookie_manager.get(cookie="agroia_name")
+
 if "autenticado" not in st.session_state:
-    st.session_state.autenticado = False
-if "usuario" not in st.session_state:
-    st.session_state.usuario = ""
-if "nombre_completo" not in st.session_state:
-    st.session_state.nombre_completo = ""
+    if cookie_user:
+        st.session_state.autenticado = True
+        st.session_state.usuario = cookie_user
+        st.session_state.nombre_completo = cookie_name or cookie_user
+    else:
+        st.session_state.autenticado = False
+        st.session_state.usuario = ""
+        st.session_state.nombre_completo = ""
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -196,6 +210,10 @@ if not st.session_state.autenticado:
                     st.session_state.autenticado = True
                     st.session_state.usuario = user[1]
                     st.session_state.nombre_completo = user[4] or user[1]
+                    
+                    # Guardar sesión en cookies del navegador
+                    cookie_manager.set("agroia_user", user[1], key="set_u")
+                    cookie_manager.set("agroia_name", user[4] or user[1], key="set_n")
                     st.rerun()
                 else:
                     st.error(msj)
@@ -503,4 +521,8 @@ else:
                 st.session_state.usuario = ""
                 st.session_state.nombre_completo = ""
                 st.session_state.messages = []
+                
+                # Borrar cookies al cerrar sesión
+                cookie_manager.delete("agroia_user", key="del_u")
+                cookie_manager.delete("agroia_name", key="del_n")
                 st.rerun()
