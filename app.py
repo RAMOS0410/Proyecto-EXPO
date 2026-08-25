@@ -23,7 +23,6 @@ st.set_page_config(
 )
 
 # --- GESTOR DE COOKIES ---
-@st.cache_resource
 def get_cookie_manager():
     return stx.CookieManager()
 
