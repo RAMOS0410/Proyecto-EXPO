@@ -180,14 +180,15 @@ cookie_user = cookie_manager.get(cookie="agroia_user")
 cookie_name = cookie_manager.get(cookie="agroia_name")
 
 if "autenticado" not in st.session_state:
-    if cookie_user:
-        st.session_state.autenticado = True
-        st.session_state.usuario = cookie_user
-        st.session_state.nombre_completo = cookie_name or cookie_user
-    else:
-        st.session_state.autenticado = False
-        st.session_state.usuario = ""
-        st.session_state.nombre_completo = ""
+    st.session_state.autenticado = False
+    st.session_state.usuario = ""
+    st.session_state.nombre_completo = ""
+
+if not st.session_state.autenticado and cookie_user:
+    st.session_state.autenticado = True
+    st.session_state.usuario = cookie_user
+    st.session_state.nombre_completo = cookie_name or cookie_user
+    st.rerun()
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -210,7 +211,6 @@ if not st.session_state.autenticado:
                     st.session_state.usuario = user[1]
                     st.session_state.nombre_completo = user[4] or user[1]
                     
-                    # Guardar sesión en cookies del navegador
                     cookie_manager.set("agroia_user", user[1], key="set_u")
                     cookie_manager.set("agroia_name", user[4] or user[1], key="set_n")
                     st.rerun()
@@ -521,7 +521,6 @@ else:
                 st.session_state.nombre_completo = ""
                 st.session_state.messages = []
                 
-                # Borrar cookies al cerrar sesión
                 cookie_manager.delete("agroia_user", key="del_u")
                 cookie_manager.delete("agroia_name", key="del_n")
                 st.rerun()
