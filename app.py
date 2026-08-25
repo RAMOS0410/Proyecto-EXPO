@@ -6,7 +6,6 @@ import pandas as pd
 from PIL import Image
 from openai import OpenAI
 import streamlit as st
-import extra_streamlit_components as stx
 
 # --- CARGAR FAVICON ---
 try:
@@ -21,12 +20,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
-# --- GESTOR DE COOKIES ---
-def get_cookie_manager():
-    return stx.CookieManager()
-
-cookie_manager = get_cookie_manager()
 
 # --- ESTILOS CSS ---
 st.markdown("""
@@ -175,20 +168,18 @@ def encode_image_to_base64(image_pil):
     image_pil.save(buffered, format="JPEG")
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-# --- PERSISTENCIA DE SESIÓN VÍA COOKIES ---
-cookie_user = cookie_manager.get(cookie="agroia_user")
-cookie_name = cookie_manager.get(cookie="agroia_name")
+# --- PERSISTENCIA DE SESIÓN VÍA URL PARAMETERS ---
+params = st.query_params
 
 if "autenticado" not in st.session_state:
-    st.session_state.autenticado = False
-    st.session_state.usuario = ""
-    st.session_state.nombre_completo = ""
-
-if not st.session_state.autenticado and cookie_user:
-    st.session_state.autenticado = True
-    st.session_state.usuario = cookie_user
-    st.session_state.nombre_completo = cookie_name or cookie_user
-    st.rerun()
+    if "user" in params and "name" in params:
+        st.session_state.autenticado = True
+        st.session_state.usuario = params["user"]
+        st.session_state.nombre_completo = params["name"]
+    else:
+        st.session_state.autenticado = False
+        st.session_state.usuario = ""
+        st.session_state.nombre_completo = ""
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -211,8 +202,8 @@ if not st.session_state.autenticado:
                     st.session_state.usuario = user[1]
                     st.session_state.nombre_completo = user[4] or user[1]
                     
-                    cookie_manager.set("agroia_user", user[1], key="set_u")
-                    cookie_manager.set("agroia_name", user[4] or user[1], key="set_n")
+                    st.query_params["user"] = user[1]
+                    st.query_params["name"] = user[4] or user[1]
                     st.rerun()
                 else:
                     st.error(msj)
@@ -521,6 +512,5 @@ else:
                 st.session_state.nombre_completo = ""
                 st.session_state.messages = []
                 
-                cookie_manager.delete("agroia_user", key="del_u")
-                cookie_manager.delete("agroia_name", key="del_n")
+                st.query_params.clear()
                 st.rerun()
