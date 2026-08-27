@@ -10,6 +10,7 @@ from openai import OpenAI
 import streamlit as st
 import streamlit.components.v1 as components
 
+# --- CONFIGURACIÓN E ICONO ---
 try:
     favicon_img = Image.open("logo.png")
 except Exception:
@@ -22,6 +23,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# --- ESTILOS CSS Y ANIMACIONES ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
@@ -80,11 +82,6 @@ st.markdown("""
         50% { transform: translateY(-6px); }
     }
 
-    @keyframes shimmer {
-        0% { background-position: -400px 0; }
-        100% { background-position: 400px 0; }
-    }
-
     .stApp { background-color: var(--bg-main) !important; }
 
     .main .block-container {
@@ -124,7 +121,7 @@ st.markdown("""
         border: none !important;
         font-family: 'Poppins', sans-serif !important;
         font-weight: 700 !important;
-        padding: 1rem 1.8rem !important;
+        padding: 0.8rem 1.8rem !important;
         font-size: 16px !important;
         letter-spacing: 0.01em;
         transition: transform 0.2s cubic-bezier(.34,1.56,.64,1), box-shadow 0.2s ease, filter 0.2s ease !important;
@@ -151,20 +148,19 @@ st.markdown("""
         display: flex;
         align-items: center;
         width: 100%;
-        padding: 20px 22px !important;
+        padding: 14px 18px !important;
         border-radius: 14px !important;
         background-color: rgba(255, 255, 255, 0.07);
         border: 1px solid rgba(255, 255, 255, 0.1);
         transition: all 0.28s cubic-bezier(.34,1.56,.64,1);
         cursor: pointer;
-        font-size: 17px !important;
+        font-size: 16px !important;
         font-weight: 600 !important;
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label:hover {
         background-color: rgba(255, 255, 255, 0.18);
         transform: translateX(6px) scale(1.02);
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
@@ -180,32 +176,8 @@ st.markdown("""
         font-weight: 800 !important;
     }
 
-    [data-testid="stSidebar"] div[role="radiogroup"] label svg,
     [data-testid="stSidebar"] div[role="radiogroup"] label [data-baseweb="radio"] > div:first-child {
         display: none !important;
-    }
-
-    [data-testid="stSidebar"] div[role="radiogroup"] label [data-testid="stMarkdownContainer"] {
-        display: block !important;
-        opacity: 1 !important;
-    }
-
-    .login-wrapper {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 78vh;
-        animation: fadeInUp 0.6s ease both;
-    }
-
-    .login-card {
-        background: var(--card-bg);
-        border: 1px solid var(--card-border);
-        border-radius: 22px;
-        padding: 40px 44px;
-        width: 100%;
-        max-width: 440px;
-        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
     }
 
     .login-icon {
@@ -219,7 +191,6 @@ st.markdown("""
         text-align: center;
         font-size: 30px;
         font-weight: 800;
-        color: var(--text-title);
         margin-bottom: 2px;
         background: linear-gradient(135deg, var(--primary-btn-hover), var(--accent));
         -webkit-background-clip: text;
@@ -233,24 +204,8 @@ st.markdown("""
         margin-bottom: 22px;
     }
 
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 6px;
-    }
-
-    .stTabs [data-baseweb="tab"] {
-        border-radius: 10px 10px 0 0;
-        padding: 10px 18px;
-        font-weight: 700;
-    }
-
     input[type="text"], input[type="password"] {
         border-radius: 10px !important;
-        transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    input[type="text"]:focus, input[type="password"]:focus {
-        border-color: var(--primary-btn) !important;
-        box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18) !important;
     }
 
     .stAlert {
@@ -260,6 +215,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# --- FUNCIONES DE PERSISTENCIA PWA Y LOCALSTORAGE ---
 def inject_pwa():
     components.html("""
     <script>
@@ -316,10 +272,12 @@ def try_restore_from_local_storage():
     </script>
     """, height=0, width=0)
 
+# --- CLIENTE OPENAI ---
 raw_key = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY", ""))
 api_key = str(raw_key).strip().strip('"').strip("'")
 client = OpenAI(api_key=api_key) if api_key else None
 
+# --- BASE DE DATOS SQLITE ---
 DB_NAME = "agroia_v4.db"
 
 def init_db():
@@ -435,7 +393,7 @@ def cerrar_sesion_db(token):
     except Exception:
         pass
 
-def preparar_imagen(image_pil, max_dim=1024, calidad=85):
+def preparar_imagen(image_pil, max_dim=1024):
     imagen = image_pil.convert("RGB")
     imagen.thumbnail((max_dim, max_dim), Image.LANCZOS)
     return imagen
@@ -465,13 +423,12 @@ if "autenticado" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# --- PANTALLA DE LOGIN ---
 if not st.session_state.autenticado:
     try_restore_from_local_storage()
 
-    st.markdown('<div class="login-wrapper">', unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1.3, 1])
     with col2:
-        st.markdown('<div class="login-card">', unsafe_allow_html=True)
         st.markdown('<div class="login-icon">🌿</div>', unsafe_allow_html=True)
         st.markdown('<div class="login-title">AGRO IA</div>', unsafe_allow_html=True)
         st.markdown('<div class="login-caption">Plataforma de Diagnóstico y Monitoreo Agrícola</div>', unsafe_allow_html=True)
@@ -504,9 +461,8 @@ if not st.session_state.autenticado:
                     st.success(msj)
                 else:
                     st.error(msj)
-        st.markdown('</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
 
+# --- PANEL PRINCIPAL DE NAVEGACIÓN ---
 else:
     st.sidebar.title("AGRO IA")
     st.sidebar.caption(f"Usuario: {st.session_state.usuario}")
@@ -520,27 +476,25 @@ else:
     opcion = opcion_mostrada.split("  ", 1)[1]
 
     if opcion == "Inicio e Historial":
-        with st.container():
-            st.title(f"Bienvenido, {st.session_state.nombre_completo}")
-            st.caption("Consulta el registro y la evolución de los diagnósticos de tus cultivos.")
+        st.title(f"Bienvenido, {st.session_state.nombre_completo}")
+        st.caption("Consulta el registro y la evolución de los diagnósticos de tus cultivos.")
+        st.subheader("Historial de Diagnósticos")
 
-            st.subheader("Historial de Diagnósticos")
+        try:
+            conn = sqlite3.connect(DB_NAME)
+            df = pd.read_sql_query(
+                "SELECT fecha AS Fecha, cultivo AS Cultivo, diagnostico AS Resumen FROM historial WHERE usuario = ? ORDER BY fecha DESC",
+                conn,
+                params=(st.session_state.usuario,)
+            )
+            conn.close()
 
-            try:
-                conn = sqlite3.connect(DB_NAME)
-                df = pd.read_sql_query(
-                    "SELECT fecha AS Fecha, cultivo AS Cultivo, diagnostico AS Resumen FROM historial WHERE usuario = ? ORDER BY fecha DESC",
-                    conn,
-                    params=(st.session_state.usuario,)
-                )
-                conn.close()
-
-                if not df.empty:
-                    st.dataframe(df, use_container_width=True)
-                else:
-                    st.info("Aún no has realizado diagnósticos. Ve a la sección 'Detectar Plaga' para escanear una muestra.")
-            except Exception as e:
-                st.error(f"Error al cargar historial: {e}")
+            if not df.empty:
+                st.dataframe(df, use_container_width=True)
+            else:
+                st.info("Aún no has realizado diagnósticos. Ve a la sección 'Detectar Plaga' para escanear una muestra.")
+        except Exception as e:
+            st.error(f"Error al cargar historial: {e}")
 
     elif opcion == "Detectar Plaga":
         st.title("Diagnóstico de Cultivo")
