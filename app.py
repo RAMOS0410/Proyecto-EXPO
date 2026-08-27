@@ -23,7 +23,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ESTILOS CSS CORREGIDOS (MODO CLARO Y OSCURO) ---
+# --- ESTILOS CSS BASADOS EN TU PALETA DE DISEÑO ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
@@ -32,46 +32,44 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
     }
 
-    /* MODO CLARO POR DEFECTO */
+    /* PALETA DE COLORES EXTRAÍDA DE TU MOCKUP */
     :root {
-        --bg-main: #f4f8f5;
-        --card-bg: #ffffff;
-        --card-border: #dbe6de;
-        --text-title: #0f291e;
-        --text-body: #37493f;
-        --sidebar-bg: #1b4d3a;
-        --sidebar-bg-2: #14352a;
-        --sidebar-text: #ffffff;
-        --primary-btn: #2f7d4f;
-        --primary-btn-hover: #1f5c39;
-        --accent: #22c55e;
-        --accent-2: #e8f5ea;
-        --accent-3: #ffffff;
-        --shadow-tint: 47, 125, 79;
+        --bg-main: #f9f8f6;            /* Fondo crema/blanco suave */
+        --card-bg: #ffffff;            /* Fondo de tarjetas blancas */
+        --card-border: #dad7cd;        /* Borde beige/verde suave (#DAD7CD) */
+        --text-title: #344e41;        /* Verde muy oscuro para títulos (#344E41) */
+        --text-body: #3a5a40;         /* Verde boscoso para texto principal (#3A5A40) */
+        --sidebar-bg: #344e41;        /* Fondo barra lateral verde oscuro */
+        --sidebar-bg-2: #283e33;      /* Gradiente inferior barra lateral */
+        --sidebar-text: #ffffff;      /* Texto blanco en barra lateral */
+        --primary-btn: #3a5a40;       /* Botón principal verde (#3A5A40) */
+        --primary-btn-hover: #588157; /* Hover verde claro (#588157) */
+        --accent: #588157;            /* Acento verde */
+        --accent-light: #dad7cd;      /* Fondo claro elementos seleccionados */
+        --shadow-tint: 58, 90, 64;
     }
 
-    /* MODO OSCURO AUTOMÁTICO */
+    /* MODO OSCURO MANTENIENDO TU TONALIDAD VERDE */
     @media (prefers-color-scheme: dark) {
         :root {
-            --bg-main: #0c1813;
-            --card-bg: #14261e;
-            --card-border: #213c30;
-            --text-title: #e6f4ea;
-            --text-body: #a3c2b0;
-            --sidebar-bg: #091712;
-            --sidebar-bg-2: #122c22;
+            --bg-main: #19241e;
+            --card-bg: #223329;
+            --card-border: #344e41;
+            --text-title: #e3ede7;
+            --text-body: #a3b8ac;
+            --sidebar-bg: #141f19;
+            --sidebar-bg-2: #1b2a22;
             --sidebar-text: #ffffff;
-            --primary-btn: #258d53;
-            --primary-btn-hover: #31ab67;
-            --accent: #4ade80;
-            --accent-2: #1b382b;
-            --accent-3: #224535;
-            --shadow-tint: 50, 205, 120;
+            --primary-btn: #588157;
+            --primary-btn-hover: #6c9a6b;
+            --accent: #a3b8ac;
+            --accent-light: #344e41;
+            --shadow-tint: 88, 129, 87;
         }
     }
 
     @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(14px); }
+        from { opacity: 0; transform: translateY(12px); }
         to { opacity: 1; transform: translateY(0); }
     }
 
@@ -85,7 +83,7 @@ st.markdown("""
     }
 
     .main .block-container {
-        animation: fadeInUp 0.5s ease both;
+        animation: fadeInUp 0.4s ease both;
     }
 
     /* FORZAR COLORES EN TEXTOS Y ENCABEZADOS DE STREAMLIT */
@@ -94,7 +92,7 @@ st.markdown("""
     [data-testid="stMarkdownContainer"] h2, [data-testid="stMarkdownContainer"] h3 {
         color: var(--text-title) !important;
         font-family: 'Poppins', sans-serif !important;
-        font-weight: 800 !important;
+        font-weight: 700 !important;
     }
 
     .stApp p, .stApp span, .stApp label, [data-testid="stMarkdownContainer"] p {
@@ -111,39 +109,39 @@ st.markdown("""
         color: var(--sidebar-text) !important; 
     }
 
-    /* TARJETAS Y CONTENEDORES */
+    /* TARJETAS DE CONTENIDO */
     div[data-testid="stVerticalBlock"] > div > div[data-testid="stVerticalBlock"] {
         background-color: var(--card-bg) !important;
-        border-radius: 16px !important;
-        padding: 22px !important;
-        border: 1px solid var(--card-border) !important;
+        border-radius: 18px !important;
+        padding: 24px !important;
+        border: 1.5px solid var(--card-border) !important;
         margin-bottom: 14px !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
         transition: box-shadow 0.25s ease, transform 0.25s ease;
-        animation: fadeInUp 0.45s ease both;
+        animation: fadeInUp 0.4s ease both;
     }
 
-    /* BOTONES */
+    /* BOTONES ESTILO MOCKUP */
     div.stButton > button {
-        background: linear-gradient(135deg, var(--primary-btn), var(--primary-btn-hover)) !important;
+        background: var(--primary-btn) !important;
         color: #ffffff !important;
-        border-radius: 14px !important;
+        border-radius: 12px !important;
         border: none !important;
         font-family: 'Poppins', sans-serif !important;
-        font-weight: 700 !important;
-        padding: 0.8rem 1.8rem !important;
-        font-size: 16px !important;
-        letter-spacing: 0.01em;
-        transition: transform 0.2s cubic-bezier(.34,1.56,.64,1), box-shadow 0.2s ease !important;
-        box-shadow: 0 4px 14px rgba(var(--shadow-tint), 0.35);
+        font-weight: 600 !important;
+        padding: 0.75rem 1.6rem !important;
+        font-size: 15px !important;
+        transition: all 0.25s ease !important;
+        box-shadow: 0 4px 12px rgba(var(--shadow-tint), 0.25);
     }
 
     div.stButton > button:hover {
-        transform: translateY(-3px) scale(1.02);
-        box-shadow: 0 8px 20px rgba(var(--shadow-tint), 0.45);
+        background: var(--primary-btn-hover) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(var(--shadow-tint), 0.35);
     }
 
-    /* NAVEGACIÓN LATERAL */
+    /* NAVEGACIÓN LATERAL ESTILO APP MÓVIL */
     [data-testid="stSidebar"] div[role="radiogroup"] {
         gap: 10px;
         display: flex;
@@ -154,8 +152,8 @@ st.markdown("""
         display: flex;
         align-items: center;
         width: 100%;
-        padding: 14px 18px !important;
-        border-radius: 14px !important;
+        padding: 12px 16px !important;
+        border-radius: 12px !important;
         background-color: rgba(255, 255, 255, 0.08);
         border: 1px solid rgba(255, 255, 255, 0.12);
         transition: all 0.25s ease;
@@ -170,28 +168,33 @@ st.markdown("""
     [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
         background: #ffffff !important;
         border-color: transparent;
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p {
-        color: #1b4d3a !important;
-        font-weight: 800 !important;
+        color: var(--sidebar-bg) !important;
+        font-weight: 700 !important;
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label [data-baseweb="radio"] > div:first-child {
         display: none !important;
     }
 
-    /* CAMPOS DE TEXTO E ENTRADAS */
+    /* CAMPOS DE ENTRADA */
     input[type="text"], input[type="password"] {
-        background-color: var(--card-bg) !important;
+        background-color: #ffffff !important;
         color: var(--text-title) !important;
-        border: 1px solid var(--card-border) !important;
+        border: 1.5px solid var(--card-border) !important;
         border-radius: 10px !important;
     }
 
+    input[type="text"]:focus, input[type="password"]:focus {
+        border-color: var(--primary-btn) !important;
+        box-shadow: 0 0 0 3px rgba(58, 90, 64, 0.15) !important;
+    }
+
     .login-icon {
-        font-size: 52px;
+        font-size: 56px;
         text-align: center;
         animation: floatIcon 3s ease-in-out infinite;
         margin-bottom: 6px;
@@ -199,7 +202,7 @@ st.markdown("""
 
     .login-title {
         text-align: center;
-        font-size: 30px;
+        font-size: 32px;
         font-weight: 800;
         margin-bottom: 2px;
         color: var(--primary-btn) !important;
@@ -227,7 +230,7 @@ def inject_pwa():
     if (!document.querySelector('meta[name="theme-color"]')) {
         const metaTheme = document.createElement('meta');
         metaTheme.name = 'theme-color';
-        metaTheme.content = '#15803d';
+        metaTheme.content = '#3A5A40';
         document.head.appendChild(metaTheme);
     }
     if ('serviceWorker' in navigator) {
@@ -430,13 +433,13 @@ if not st.session_state.autenticado:
     with col2:
         st.markdown('<div class="login-icon">🌿</div>', unsafe_allow_html=True)
         st.markdown('<div class="login-title">AGRO IA</div>', unsafe_allow_html=True)
-        st.markdown('<div class="login-caption">Plataforma de Diagnóstico y Monitoreo Agrícola</div>', unsafe_allow_html=True)
+        st.markdown('<div class="login-caption">Inteligencia Artificial para el cuidado de tus cultivos</div>', unsafe_allow_html=True)
 
         tab1, tab2 = st.tabs(["Iniciar Sesión", "Registrarse"])
         with tab1:
             user_input = st.text_input("Usuario o Correo", key="l_user")
             pass_input = st.text_input("Contraseña", type="password", key="l_pass")
-            if st.button("Ingresar", use_container_width=True, key="btn_login"):
+            if st.button("Iniciar sesión", use_container_width=True, key="btn_login"):
                 user, token, msj = autenticar_usuario(user_input, pass_input)
                 if user:
                     st.session_state.autenticado = True
@@ -475,8 +478,8 @@ else:
     opcion = opcion_mostrada.split("  ", 1)[1]
 
     if opcion == "Inicio e Historial":
-        st.title(f"Bienvenido, {st.session_state.nombre_completo}")
-        st.caption("Consulta el registro y la evolución de los diagnósticos de tus cultivos.")
+        st.title(f"¡Hola, {st.session_state.nombre_completo}! 🌿")
+        st.caption("Este es el estado y registro de los diagnósticos de tus cultivos.")
         st.subheader("Historial de Diagnósticos")
 
         try:
@@ -496,8 +499,8 @@ else:
             st.error(f"Error al cargar historial: {e}")
 
     elif opcion == "Detectar Plaga":
-        st.title("Diagnóstico de Cultivo")
-        st.caption("Sube una imagen o toma una foto para analizar el estado de salud de tu muestra.")
+        st.title("Nuevo Diagnóstico")
+        st.caption("Toma una foto o sube una imagen de tu cultivo.")
 
         col1, col2 = st.columns([1, 1])
 
@@ -517,7 +520,7 @@ else:
                 st.image(img, caption="Muestra cargada", use_container_width=True)
 
         with col2:
-            st.subheader("Informe del Diagnóstico")
+            st.subheader("Resultado del Diagnóstico")
             if imagen_file and img is not None:
                 if st.button("Ejecutar Análisis", use_container_width=True):
                     with st.spinner("Procesando imagen..."):
@@ -634,8 +637,8 @@ else:
         conn.close()
 
     elif opcion == "Mi Cuenta":
-        st.title("Gestión de Cuenta")
-        st.caption("Información del perfil de usuario y opciones de sesión.")
+        st.title("Mi Perfil")
+        st.caption("Información del usuario y configuración de cuenta.")
 
         st.write(f"**Nombre:** {st.session_state.nombre_completo}")
         st.write(f"**Usuario:** {st.session_state.usuario}")
@@ -643,7 +646,7 @@ else:
 
         col_logout, _ = st.columns([1, 2])
         with col_logout:
-            if st.button("Cerrar Sesión", use_container_width=True):
+            if st.button("Cerrar sesión", use_container_width=True):
                 if "token" in st.session_state:
                     cerrar_sesion_db(st.session_state.token)
 
