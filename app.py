@@ -2,6 +2,7 @@ import hashlib
 import os
 import base64
 import sqlite3
+import secrets
 import pandas as pd
 from PIL import Image
 from openai import OpenAI
@@ -117,6 +118,13 @@ def init_db():
         )
     ''')
     cursor.execute('''
+        CREATE TABLE IF NOT EXISTS sesiones (
+            token TEXT PRIMARY KEY,
+            usuario TEXT,
+            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    cursor.execute('''
         CREATE TABLE IF NOT EXISTS historial (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             usuario TEXT,
@@ -125,7 +133,6 @@ def init_db():
             fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
-    # Tabla para las conversaciones del asistente
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS conversaciones (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -134,7 +141,6 @@ def init_db():
             fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
-    # Tabla para los mensajes de cada conversación
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS mensajes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -174,13 +180,43 @@ def autenticar_usuario(identificador, password):
         cursor.execute("SELECT id, usuario, correo, password, nombre_completo FROM usuarios WHERE usuario = ? OR correo = ?",
                        (identificador.strip().lower(), identificador.strip().lower()))
         user = cursor.fetchone()
-        conn.close()
         
         if user and user[3] == hash_password(password):
-            return user, "OK"
-        return None, "Usuario o contraseña incorrectos."
+            token = secrets.token_hex(16)
+            cursor.execute("INSERT INTO sesiones (token, usuario) VALUES (?, ?)", (token, user[1]))
+            conn.commit()
+            conn.close()
+            return user, token, "OK"
+        conn.close()
+        return None, None, "Usuario o contraseña incorrectos."
     except Exception as e:
-        return None, f"Error: {e}"
+        return None, None, f"Error: {e}"
+
+def obtener_usuario_por_token(token):
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT u.usuario, u.nombre_completo 
+            FROM sesiones s 
+            JOIN usuarios u ON s.usuario = u.usuario 
+            WHERE s.token = ?
+        """, (token,))
+        user = cursor.fetchone()
+        conn.close()
+        return user
+    except Exception:
+        return None
+
+def cerrar_sesion_db(token):
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM sesiones WHERE token = ?", (token,))
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
 
 def encode_image_to_base64(image_pil):
     import io
@@ -188,18 +224,21 @@ def encode_image_to_base64(image_pil):
     image_pil.save(buffered, format="JPEG")
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-# --- PERSISTENCIA DE SESIÓN VÍA URL PARAMETERS ---
+# --- PERSISTENCIA VÍA TOKEN EN URL Y SQLITE ---
 params = st.query_params
 
 if "autenticado" not in st.session_state:
-    if "user" in params and "name" in params:
-        st.session_state.autenticado = True
-        st.session_state.usuario = params["user"]
-        st.session_state.nombre_completo = params["name"]
+    if "session_token" in params:
+        user_info = obtener_usuario_por_token(params["session_token"])
+        if user_info:
+            st.session_state.autenticado = True
+            st.session_state.usuario = user_info[0]
+            st.session_state.nombre_completo = user_info[1] or user_info[0]
+            st.session_state.token = params["session_token"]
+        else:
+            st.session_state.autenticado = False
     else:
         st.session_state.autenticado = False
-        st.session_state.usuario = ""
-        st.session_state.nombre_completo = ""
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -216,14 +255,14 @@ if not st.session_state.autenticado:
             user_input = st.text_input("Usuario o Correo", key="l_user")
             pass_input = st.text_input("Contraseña", type="password", key="l_pass")
             if st.button("Ingresar", use_container_width=True):
-                user, msj = autenticar_usuario(user_input, pass_input)
+                user, token, msj = autenticar_usuario(user_input, pass_input)
                 if user:
                     st.session_state.autenticado = True
                     st.session_state.usuario = user[1]
                     st.session_state.nombre_completo = user[4] or user[1]
+                    st.session_state.token = token
                     
-                    st.query_params["user"] = user[1]
-                    st.query_params["name"] = user[4] or user[1]
+                    st.query_params["session_token"] = token
                     st.rerun()
                 else:
                     st.error(msj)
@@ -342,7 +381,7 @@ else:
             else:
                 st.info("Carga una foto en el panel izquierdo para ver los resultados aquí.")
 
-    # --- 3. ASISTENTE VIRTUAL (CON HISTORIAL DE CONVERSACIONES) ---
+    # --- 3. ASISTENTE VIRTUAL ---
     elif opcion == "Asistente Virtual":
         st.title("Asistente Agrónomo")
         st.caption("Consulta dudas y dale seguimiento a tus conversaciones anteriores.")
@@ -350,11 +389,9 @@ else:
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
 
-        # Obtener las conversaciones previas del usuario
         cursor.execute("SELECT id, titulo FROM conversaciones WHERE usuario = ? ORDER BY id DESC", (st.session_state.usuario,))
         chats_existentes = cursor.fetchall()
 
-        # Selector en la barra lateral para cambiar o crear chat
         opciones_chat = ["+ Nueva Conversación"] + [f"Chat #{c[0]}: {c[1]}" for c in chats_existentes]
         chat_seleccionado = st.sidebar.selectbox("Historial de Conversaciones", opciones_chat)
 
@@ -364,29 +401,23 @@ else:
             st.session_state.messages = []
         else:
             chat_id = int(chat_seleccionado.split(":")[0].replace("Chat #", ""))
-            
-            # Solo recargar de la DB si se cambió de conversación activa
             if st.session_state.get("current_chat_id") != chat_id:
                 st.session_state.current_chat_id = chat_id
                 cursor.execute("SELECT rol, contenido FROM mensajes WHERE conversacion_id = ? ORDER BY id ASC", (chat_id,))
                 mensajes_db = cursor.fetchall()
                 st.session_state.messages = [{"role": m[0], "content": m[1]} for m in mensajes_db]
 
-        # Mostrar los mensajes en pantalla
         for msg in st.session_state.messages:
             with st.chat_message(msg["role"]):
                 st.markdown(msg["content"])
 
-        # Campo de entrada de mensaje
         if prompt := st.chat_input("Escribe tu pregunta o seguimiento aquí..."):
-            # Si es una nueva conversación, la guardamos en la tabla
             if "current_chat_id" not in st.session_state:
                 titulo_chat = prompt[:30] + "..." if len(prompt) > 30 else prompt
                 cursor.execute("INSERT INTO conversaciones (usuario, titulo) VALUES (?, ?)", (st.session_state.usuario, titulo_chat))
                 conn.commit()
                 st.session_state.current_chat_id = cursor.lastrowid
 
-            # Agregar mensaje del usuario a memoria y DB
             st.session_state.messages.append({"role": "user", "content": prompt})
             cursor.execute("INSERT INTO mensajes (conversacion_id, rol, contenido) VALUES (?, ?, ?)", 
                            (st.session_state.current_chat_id, "user", prompt))
@@ -395,7 +426,6 @@ else:
             with st.chat_message("user"):
                 st.markdown(prompt)
 
-            # Respuesta del modelo OpenAI
             with st.chat_message("assistant"):
                 if client:
                     try:
@@ -409,7 +439,6 @@ else:
                         text = res.choices[0].message.content
                         st.markdown(text)
                         
-                        # Guardar respuesta del asistente a memoria y DB
                         st.session_state.messages.append({"role": "assistant", "content": text})
                         cursor.execute("INSERT INTO mensajes (conversacion_id, rol, contenido) VALUES (?, ?, ?)", 
                                        (st.session_state.current_chat_id, "assistant", text))
@@ -434,6 +463,9 @@ else:
         col_logout, _ = st.columns([1, 2])
         with col_logout:
             if st.button("Cerrar Sesión", use_container_width=True):
+                if "token" in st.session_state:
+                    cerrar_sesion_db(st.session_state.token)
+                
                 st.session_state.autenticado = False
                 st.session_state.usuario = ""
                 st.session_state.nombre_completo = ""
