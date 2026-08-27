@@ -26,231 +26,136 @@ st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
+    /* Reset global y tipografía */
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
     }
 
-    h1, h2, h3, h4, .login-title, [data-testid="stSidebar"] div[role="radiogroup"] label {
+    h1, h2, h3, h4, .login-title {
         font-family: 'Poppins', sans-serif !important;
     }
 
-    :root {
-        --bg-main: #f6f9f6;
-        --card-bg: #ffffff;
-        --card-border: #e5eae4;
-        --text-title: #1a2e22;
-        --text-body: #5b6b62;
-        --sidebar-bg: #1b4d3a;
-        --sidebar-bg-2: #14352a;
-        --sidebar-text: #f3f8f4;
-        --primary-btn: #2f7d4f;
-        --primary-btn-hover: #1f5c39;
-        --accent: #22c55e;
-        --accent-2: #e8f5ea;
-        --accent-3: #ffffff;
-        --shadow-tint: 47, 125, 79;
+    /* FORZAR VISTA CLARA GLOBAL (Anula el tema oscuro del navegador) */
+    .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+        background-color: #f4f7f4 !important;
+        color: #1f2d24 !important;
     }
 
-    @media (prefers-color-scheme: dark) {
-        :root {
-            --bg-main: #10201a;
-            --card-bg: #172c22;
-            --card-border: #274435;
-            --text-title: #eef7ef;
-            --text-body: #b7cabf;
-            --sidebar-bg: #0d1f17;
-            --sidebar-bg-2: #14352a;
-            --sidebar-text: #f3f8f4;
-            --primary-btn: #2f9d5f;
-            --primary-btn-hover: #3fbd75;
-            --accent: #4ade80;
-            --accent-2: #1f3b2c;
-            --accent-3: #274435;
-            --shadow-tint: 63, 189, 117;
-        }
-    }
-
-    @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(14px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes floatIcon {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-6px); }
-    }
-
-    @keyframes shimmer {
-        0% { background-position: -400px 0; }
-        100% { background-position: 400px 0; }
-    }
-
-    .stApp { background-color: var(--bg-main) !important; }
-
-    .main .block-container {
-        animation: fadeInUp 0.5s ease both;
-    }
-
+    /* SIDEBAR VERDE BOSQUE ROBUSTO */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--sidebar-bg-2) 100%) !important;
-        padding-top: 1rem;
+        background-color: #1a4332 !important;
+        padding-top: 1.5rem;
     }
 
-    [data-testid="stSidebar"] * { color: var(--sidebar-text) !important; }
-
-    h1, h2, h3, h4 {
-        color: var(--text-title) !important;
-        font-weight: 800 !important;
-        letter-spacing: -0.02em;
+    [data-testid="stSidebar"] *, [data-testid="stSidebar"] p, [data-testid="stSidebar"] span { 
+        color: #ffffff !important; 
     }
 
-    p, span, label { color: var(--text-body); }
-
-    div[data-testid="stVerticalBlock"] > div > div[data-testid="stVerticalBlock"] {
-        background-color: var(--card-bg) !important;
-        border-radius: 16px !important;
-        padding: 22px !important;
-        border: 1px solid var(--card-border) !important;
-        margin-bottom: 14px !important;
-        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
-        transition: box-shadow 0.25s ease, transform 0.25s ease;
-        animation: fadeInUp 0.45s ease both;
+    [data-testid="stSidebar"] .stCaption {
+        color: #a3c1b2 !important;
     }
 
-    div.stButton > button {
-        background: linear-gradient(135deg, var(--primary-btn), var(--primary-btn-hover)) !important;
-        color: #ffffff !important;
-        border-radius: 14px !important;
-        border: none !important;
-        font-family: 'Poppins', sans-serif !important;
-        font-weight: 700 !important;
-        padding: 1rem 1.8rem !important;
-        font-size: 16px !important;
-        letter-spacing: 0.01em;
-        transition: transform 0.2s cubic-bezier(.34,1.56,.64,1), box-shadow 0.2s ease, filter 0.2s ease !important;
-        box-shadow: 0 4px 14px rgba(var(--shadow-tint), 0.35);
-    }
-
-    div.stButton > button:hover {
-        transform: translateY(-3px) scale(1.03);
-        filter: brightness(1.08);
-        box-shadow: 0 10px 24px rgba(var(--shadow-tint), 0.45);
-    }
-
-    div.stButton > button:active {
-        transform: translateY(0) scale(0.97);
-    }
-
+    /* BOTONES DE NAVEGACIÓN EN EL SIDEBAR (Visibilidad del texto garantizada) */
     [data-testid="stSidebar"] div[role="radiogroup"] {
-        gap: 10px;
-        display: flex;
-        flex-direction: column;
+        gap: 8px !important;
+        display: flex !important;
+        flex-direction: column !important;
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label {
-        display: flex;
-        align-items: center;
-        width: 100%;
-        padding: 20px 22px !important;
-        border-radius: 14px !important;
-        background-color: rgba(255, 255, 255, 0.07);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        transition: all 0.28s cubic-bezier(.34,1.56,.64,1);
-        cursor: pointer;
-        font-size: 17px !important;
-        font-weight: 600 !important;
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 8px !important;
+        padding: 10px 14px !important;
+        margin: 0 !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label:hover {
-        background-color: rgba(255, 255, 255, 0.18);
-        transform: translateX(6px) scale(1.02);
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        background-color: rgba(255, 255, 255, 0.18) !important;
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
-        background: linear-gradient(135deg, var(--accent-3), var(--accent-2)) !important;
-        color: var(--sidebar-bg) !important;
-        border-color: transparent;
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
-        transform: scale(1.03);
+        background-color: #2d6a4f !important;
+        border: 1px solid #4ade80 !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15) !important;
     }
 
-    [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p {
-        color: var(--sidebar-bg) !important;
-        font-weight: 800 !important;
+    /* Asegurar visibilidad completa del texto en la navegación */
+    [data-testid="stSidebar"] div[role="radiogroup"] label * {
+        color: #ffffff !important;
+        font-size: 15px !important;
+        font-weight: 600 !important;
+        opacity: 1 !important;
     }
 
-    [data-testid="stSidebar"] div[role="radiogroup"] label div:first-child {
-        display: none;
+    /* CONTENIDO PRINCIPAL: TÍTULOS Y TEXTO */
+    .main h1, .main h2, .main h3, .main h4 {
+        color: #1a4332 !important;
+        font-weight: 700 !important;
     }
 
+    .main p, .main span, .main label {
+        color: #2d3748 !important;
+    }
+
+    /* TARJETAS BLANCAS Y LIMPIAS */
+    div[data-testid="stVerticalBlock"] > div > div[data-testid="stVerticalBlock"] {
+        background-color: #ffffff !important;
+        border-radius: 12px !important;
+        padding: 24px !important;
+        border: 1px solid #e2e8e3 !important;
+        margin-bottom: 16px !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+    }
+
+    /* ALERTAS DE INFORMACIÓN (MODIFICADAS A BLANCO/VERDE) */
+    div[data-testid="stNotification"] {
+        background-color: #ffffff !important;
+        color: #1a4332 !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 8px !important;
+    }
+
+    /* BOTONES PRINCIPALES */
+    div.stButton > button {
+        background-color: #2d6a4f !important;
+        color: #ffffff !important;
+        border-radius: 8px !important;
+        border: none !important;
+        font-family: 'Poppins', sans-serif !important;
+        font-weight: 600 !important;
+        padding: 0.75rem 1.5rem !important;
+        font-size: 15px !important;
+        box-shadow: 0 4px 10px rgba(45, 106, 79, 0.2);
+    }
+
+    div.stButton > button:hover {
+        background-color: #1e4b38 !important;
+    }
+
+    /* LOGIN CARD */
     .login-wrapper {
         display: flex;
         justify-content: center;
         align-items: center;
-        min-height: 78vh;
-        animation: fadeInUp 0.6s ease both;
+        min-height: 75vh;
     }
 
     .login-card {
-        background: var(--card-bg);
-        border: 1px solid var(--card-border);
-        border-radius: 22px;
-        padding: 40px 44px;
+        background: #ffffff !important;
+        border: 1px solid #e2e8e3 !important;
+        border-radius: 16px;
+        padding: 36px;
         width: 100%;
-        max-width: 440px;
-        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+        max-width: 420px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
     }
 
-    .login-icon {
-        font-size: 52px;
-        text-align: center;
-        animation: floatIcon 3s ease-in-out infinite;
-        margin-bottom: 6px;
-    }
-
-    .login-title {
-        text-align: center;
-        font-size: 30px;
-        font-weight: 800;
-        color: var(--text-title);
-        margin-bottom: 2px;
-        background: linear-gradient(135deg, var(--primary-btn-hover), var(--accent));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-
-    .login-caption {
-        text-align: center;
-        color: var(--text-body);
-        font-size: 14px;
-        margin-bottom: 22px;
-    }
-
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 6px;
-    }
-
-    .stTabs [data-baseweb="tab"] {
-        border-radius: 10px 10px 0 0;
-        padding: 10px 18px;
-        font-weight: 700;
-    }
-
-    input[type="text"], input[type="password"] {
-        border-radius: 10px !important;
-        transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    input[type="text"]:focus, input[type="password"]:focus {
-        border-color: var(--primary-btn) !important;
-        box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18) !important;
-    }
-
-    .stAlert {
-        border-radius: 12px;
-        animation: fadeInUp 0.35s ease both;
-    }
+    .login-icon { font-size: 48px; text-align: center; margin-bottom: 4px; }
+    .login-title { text-align: center; font-size: 28px; font-weight: 800; color: #1a4332 !important; }
+    .login-caption { text-align: center; color: #64748b !important; font-size: 13px; margin-bottom: 20px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -266,7 +171,7 @@ def inject_pwa():
     if (!document.querySelector('meta[name="theme-color"]')) {
         const metaTheme = document.createElement('meta');
         metaTheme.name = 'theme-color';
-        metaTheme.content = '#15803d';
+        metaTheme.content = '#1a4332';
         document.head.appendChild(metaTheme);
     }
     if ('serviceWorker' in navigator) {
@@ -508,12 +413,13 @@ else:
 
     opcion_mostrada = st.sidebar.radio(
         "Navegación",
-        ["🏠  Inicio e Historial", "🐛  Detectar Plaga", "🤖  Asistente Virtual", "👤  Mi Cuenta"],
+        ["🏠 Inicio e Historial", "🐛 Detectar Plaga", "🤖 Asistente Virtual", "👤 Mi Cuenta"],
         label_visibility="collapsed"
     )
-    opcion = opcion_mostrada.split("  ", 1)[1]
+    
+    opcion = opcion_mostrada.split(" ", 1)[1] if " " in opcion_mostrada else opcion_mostrada
 
-    if opcion == "Inicio e Historial":
+    if "Inicio" in opcion:
         st.title(f"Bienvenido, {st.session_state.nombre_completo}")
         st.caption("Consulta el registro y la evolución de los diagnósticos de tus cultivos.")
 
@@ -535,7 +441,7 @@ else:
         except Exception as e:
             st.error(f"Error al cargar historial: {e}")
 
-    elif opcion == "Detectar Plaga":
+    elif "Detectar" in opcion:
         st.title("Diagnóstico de Cultivo")
         st.caption("Sube una imagen o toma una foto para analizar el estado de salud de tu muestra.")
 
@@ -575,7 +481,7 @@ else:
                                 """
 
                                 response = client.chat.completions.create(
-                                    model="gpt-5.6-luna",
+                                    model="gpt-4o",
                                     messages=[{
                                         "role": "user",
                                         "content": [
@@ -583,8 +489,7 @@ else:
                                             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
                                         ]
                                     }],
-                                    reasoning_effort="none",
-                                    max_completion_tokens=1200
+                                    max_tokens=1200
                                 )
 
                                 resultado = response.choices[0].message.content
@@ -604,7 +509,7 @@ else:
             else:
                 st.info("Carga una foto en el panel izquierdo para ver los resultados aquí.")
 
-    elif opcion == "Asistente Virtual":
+    elif "Asistente" in opcion:
         st.title("Asistente Agrónomo")
         st.caption("Consulta dudas y dale seguimiento a tus conversaciones anteriores.")
 
@@ -653,10 +558,9 @@ else:
                     try:
                         history = [{"role": "system", "content": "Eres un experto agrónomo que responde en español sencillo, directo y profesional."}] + st.session_state.messages
                         res = client.chat.completions.create(
-                            model="gpt-5.6-luna",
+                            model="gpt-4o",
                             messages=history,
-                            reasoning_effort="none",
-                            max_completion_tokens=1000
+                            max_tokens=1000
                         )
                         text = res.choices[0].message.content
                         st.markdown(text)
@@ -673,7 +577,7 @@ else:
 
         conn.close()
 
-    elif opcion == "Mi Cuenta":
+    elif "Cuenta" in opcion:
         st.title("Gestión de Cuenta")
         st.caption("Información del perfil de usuario y opciones de sesión.")
 
