@@ -23,26 +23,42 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ESTILOS CSS CON FORZADO TOTAL DE MODO CLARO ---
+# --- ESTILOS CSS CON DETECCIÓN AUTOMÁTICA DE MODO CLARO Y OSCURO ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
-    /* COLORES FIJOS DEL MODO CLARO (SIN MEDIA QUERIES) */
+    /* 1. PALETA MODO CLARO (Basada en tu diseño) */
     :root {
-        --bg-main: #F8F9FA !important;
-        --card-bg: #FFFFFF !important;
-        --card-border: #DAD7CD !important;
-        --text-title: #344E41 !important;
-        --text-body: #3A5A40 !important;
-        --sidebar-bg: #344E41 !important;
-        --sidebar-bg-2: #2A3F34 !important;
-        --sidebar-text: #FFFFFF !important;
-        --primary-btn: #3A5A40 !important;
-        --primary-btn-hover: #588157 !important;
+        --bg-main: #F8F9FA;
+        --card-bg: #FFFFFF;
+        --card-border: #DAD7CD;
+        --text-title: #344E41;
+        --text-body: #3A5A40;
+        --sidebar-bg: #344E41;
+        --sidebar-bg-2: #2A3F34;
+        --sidebar-text: #FFFFFF;
+        --primary-btn: #3A5A40;
+        --primary-btn-hover: #588157;
     }
 
-    /* FORZAR FONDO PRINCIPAL Y FUENTE */
+    /* 2. PALETA MODO OSCURO (Automático según el sistema) */
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg-main: #121C17;
+            --card-bg: #1E2D25;
+            --card-border: #344E41;
+            --text-title: #E3EDE7;
+            --text-body: #A3B8AC;
+            --sidebar-bg: #0D1511;
+            --sidebar-bg-2: #16231C;
+            --sidebar-text: #FFFFFF;
+            --primary-btn: #588157;
+            --primary-btn-hover: #6C9A6B;
+        }
+    }
+
+    /* APLICACIÓN DE VARIABLES DINÁMICAS */
     html, body, [data-testid="stAppViewContainer"], .stApp {
         background-color: var(--bg-main) !important;
         color: var(--text-body) !important;
@@ -53,7 +69,7 @@ st.markdown("""
         background-color: transparent !important;
     }
 
-    /* TEXTOS Y ENCABEZADOS DE LA APLICACIÓN */
+    /* ENCABEZADOS Y TEXTOS */
     .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6,
     [data-testid="stMarkdownContainer"] h1, 
     [data-testid="stMarkdownContainer"] h2, 
@@ -67,7 +83,7 @@ st.markdown("""
         color: var(--text-body) !important;
     }
 
-    /* BARRA LATERAL (SIDEBAR VERDE OSCURO) */
+    /* BARRA LATERAL */
     [data-testid="stSidebar"] {
         background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--sidebar-bg-2) 100%) !important;
     }
@@ -76,21 +92,13 @@ st.markdown("""
         color: var(--sidebar-text) !important; 
     }
 
-    /* TARJETAS DE CONTENIDO EN BLANCO */
+    /* TARJETAS DE CONTENIDO */
     div[data-testid="stVerticalBlock"] > div > div[data-testid="stVerticalBlock"] {
         background-color: var(--card-bg) !important;
         border-radius: 16px !important;
         padding: 24px !important;
         border: 1.5px solid var(--card-border) !important;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04) !important;
-    }
-
-    /* INFORMACIÓN DE ALERTAS E NOTIFICACIONES */
-    [data-testid="stAlert"] {
-        background-color: #E8F5E9 !important;
-        color: var(--text-title) !important;
-        border: 1px solid var(--card-border) !important;
-        border-radius: 12px !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1) !important;
     }
 
     /* BOTONES */
@@ -111,15 +119,15 @@ st.markdown("""
         transform: translateY(-2px);
     }
 
-    /* CAMPOS DE ENTRADA DE TEXTO */
+    /* CAMPOS DE TEXTO */
     input[type="text"], input[type="password"] {
-        background-color: #FFFFFF !important;
+        background-color: var(--card-bg) !important;
         color: var(--text-title) !important;
         border: 1.5px solid var(--card-border) !important;
         border-radius: 10px !important;
     }
 
-    /* RADIOS NAVEGACIÓN LATERAL */
+    /* RADIO BUTTONS BARRA LATERAL */
     [data-testid="stSidebar"] div[role="radiogroup"] label {
         background-color: rgba(255, 255, 255, 0.08) !important;
         border: 1px solid rgba(255, 255, 255, 0.12) !important;
@@ -133,7 +141,7 @@ st.markdown("""
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p {
-        color: var(--sidebar-bg) !important;
+        color: #344E41 !important;
         font-weight: 700 !important;
     }
 
