@@ -1,5 +1,6 @@
 import hashlib
 import os
+import io
 import base64
 import sqlite3
 import secrets
@@ -7,40 +8,40 @@ import pandas as pd
 from PIL import Image
 from openai import OpenAI
 import streamlit as st
+import streamlit.components.v1 as components
 
-# --- CARGAR FAVICON ---
 try:
     favicon_img = Image.open("logo.png")
 except Exception:
     favicon_img = "🌿"
 
-# --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
-    page_title="AGRO IA", 
-    page_icon=favicon_img, 
+    page_title="AGRO IA",
+    page_icon=favicon_img,
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- ESTILOS CSS ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
     }
 
     :root {
-        --bg-main: #f8fafc;
+        --bg-main: #f1f5f9;
         --card-bg: #ffffff;
         --card-border: #e2e8f0;
         --text-title: #0f172a;
         --text-body: #334155;
-        --sidebar-bg: #1e293b;
+        --sidebar-bg: #14532d;
+        --sidebar-bg-2: #0f172a;
         --sidebar-text: #f8fafc;
-        --primary-btn: #15803d;
-        --primary-btn-hover: #166534;
+        --primary-btn: #16a34a;
+        --primary-btn-hover: #15803d;
+        --accent: #22c55e;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -51,58 +52,247 @@ st.markdown("""
             --text-title: #f8fafc;
             --text-body: #cbd5e1;
             --sidebar-bg: #0f172a;
+            --sidebar-bg-2: #14532d;
             --sidebar-text: #f8fafc;
             --primary-btn: #16a34a;
-            --primary-btn-hover: #15803d;
+            --primary-btn-hover: #22c55e;
+            --accent: #22c55e;
         }
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(14px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes floatIcon {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-6px); }
+    }
+
+    @keyframes shimmer {
+        0% { background-position: -400px 0; }
+        100% { background-position: 400px 0; }
     }
 
     .stApp { background-color: var(--bg-main) !important; }
 
+    .main .block-container {
+        animation: fadeInUp 0.5s ease both;
+    }
+
     [data-testid="stSidebar"] {
-        background-color: var(--sidebar-bg) !important;
+        background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--sidebar-bg-2) 100%) !important;
         padding-top: 1rem;
     }
-    
+
     [data-testid="stSidebar"] * { color: var(--sidebar-text) !important; }
 
     h1, h2, h3, h4 {
         color: var(--text-title) !important;
-        font-weight: 700 !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.02em;
     }
 
     p, span, label { color: var(--text-body); }
 
     div[data-testid="stVerticalBlock"] > div > div[data-testid="stVerticalBlock"] {
         background-color: var(--card-bg) !important;
-        border-radius: 12px !important;
-        padding: 20px !important;
+        border-radius: 16px !important;
+        padding: 22px !important;
         border: 1px solid var(--card-border) !important;
-        margin-bottom: 12px !important;
+        margin-bottom: 14px !important;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+        transition: box-shadow 0.25s ease, transform 0.25s ease;
+        animation: fadeInUp 0.45s ease both;
     }
 
     div.stButton > button {
-        background-color: var(--primary-btn) !important;
+        background: linear-gradient(135deg, var(--primary-btn), var(--primary-btn-hover)) !important;
         color: #ffffff !important;
-        border-radius: 8px !important;
+        border-radius: 10px !important;
         border: none !important;
-        font-weight: 600 !important;
-        padding: 0.6rem 1.2rem !important;
+        font-weight: 700 !important;
+        padding: 0.75rem 1.4rem !important;
+        font-size: 15px !important;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease !important;
+        box-shadow: 0 4px 14px rgba(22, 163, 74, 0.3);
     }
 
     div.stButton > button:hover {
-        background-color: var(--primary-btn-hover) !important;
-        color: #ffffff !important;
+        transform: translateY(-2px) scale(1.015);
+        filter: brightness(1.05);
+        box-shadow: 0 8px 20px rgba(22, 163, 74, 0.4);
+    }
+
+    div.stButton > button:active {
+        transform: translateY(0) scale(0.98);
+    }
+
+    [data-testid="stSidebar"] div[role="radiogroup"] {
+        gap: 10px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    [data-testid="stSidebar"] div[role="radiogroup"] label {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 16px 18px !important;
+        border-radius: 12px !important;
+        background-color: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        transition: all 0.25s ease;
+        cursor: pointer;
+        font-size: 16px !important;
+        font-weight: 600 !important;
+    }
+
+    [data-testid="stSidebar"] div[role="radiogroup"] label:hover {
+        background-color: rgba(255, 255, 255, 0.16);
+        transform: translateX(5px);
+    }
+
+    [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
+        background: linear-gradient(135deg, var(--primary-btn), var(--primary-btn-hover));
+        border-color: transparent;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    }
+
+    [data-testid="stSidebar"] div[role="radiogroup"] label div:first-child {
+        display: none;
+    }
+
+    .login-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 78vh;
+        animation: fadeInUp 0.6s ease both;
+    }
+
+    .login-card {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 22px;
+        padding: 40px 44px;
+        width: 100%;
+        max-width: 440px;
+        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+    }
+
+    .login-icon {
+        font-size: 52px;
+        text-align: center;
+        animation: floatIcon 3s ease-in-out infinite;
+        margin-bottom: 6px;
+    }
+
+    .login-title {
+        text-align: center;
+        font-size: 30px;
+        font-weight: 800;
+        color: var(--text-title);
+        margin-bottom: 2px;
+        background: linear-gradient(135deg, var(--primary-btn-hover), var(--accent));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .login-caption {
+        text-align: center;
+        color: var(--text-body);
+        font-size: 14px;
+        margin-bottom: 22px;
+    }
+
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 6px;
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 10px 10px 0 0;
+        padding: 10px 18px;
+        font-weight: 700;
+    }
+
+    input[type="text"], input[type="password"] {
+        border-radius: 10px !important;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input[type="text"]:focus, input[type="password"]:focus {
+        border-color: var(--primary-btn) !important;
+        box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18) !important;
+    }
+
+    .stAlert {
+        border-radius: 12px;
+        animation: fadeInUp 0.35s ease both;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# --- CLIENTE OPENAI ---
+def inject_pwa():
+    components.html("""
+    <script>
+    if (!document.querySelector('link[rel="manifest"]')) {
+        const linkManifest = document.createElement('link');
+        linkManifest.rel = 'manifest';
+        linkManifest.href = 'app/static/manifest.json';
+        document.head.appendChild(linkManifest);
+    }
+    if (!document.querySelector('meta[name="theme-color"]')) {
+        const metaTheme = document.createElement('meta');
+        metaTheme.name = 'theme-color';
+        metaTheme.content = '#15803d';
+        document.head.appendChild(metaTheme);
+    }
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('app/static/sw.js').catch(() => {});
+    }
+    </script>
+    """, height=0, width=0)
+
+def set_local_storage_token(token):
+    components.html(f"""
+    <script>
+    try {{
+        localStorage.setItem('agroia_token', '{token}');
+    }} catch (e) {{}}
+    </script>
+    """, height=0, width=0)
+
+def clear_local_storage_token():
+    components.html("""
+    <script>
+    try {
+        localStorage.removeItem('agroia_token');
+    } catch (e) {}
+    </script>
+    """, height=0, width=0)
+
+def try_restore_from_local_storage():
+    components.html("""
+    <script>
+    try {
+        const token = localStorage.getItem('agroia_token');
+        if (token) {
+            const url = new URL(window.location.href);
+            if (url.searchParams.get('session_token') !== token) {
+                url.searchParams.set('session_token', token);
+                window.location.replace(url.toString());
+            }
+        }
+    } catch (e) {}
+    </script>
+    """, height=0, width=0)
+
 raw_key = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY", ""))
 api_key = str(raw_key).strip().strip('"').strip("'")
 client = OpenAI(api_key=api_key) if api_key else None
 
-# --- BASE DE DATOS LOCAL ---
 DB_NAME = "agroia_v4.db"
 
 def init_db():
@@ -180,7 +370,7 @@ def autenticar_usuario(identificador, password):
         cursor.execute("SELECT id, usuario, correo, password, nombre_completo FROM usuarios WHERE usuario = ? OR correo = ?",
                        (identificador.strip().lower(), identificador.strip().lower()))
         user = cursor.fetchone()
-        
+
         if user and user[3] == hash_password(password):
             token = secrets.token_hex(16)
             cursor.execute("INSERT INTO sesiones (token, usuario) VALUES (?, ?)", (token, user[1]))
@@ -197,9 +387,9 @@ def obtener_usuario_por_token(token):
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT u.usuario, u.nombre_completo 
-            FROM sesiones s 
-            JOIN usuarios u ON s.usuario = u.usuario 
+            SELECT u.usuario, u.nombre_completo
+            FROM sesiones s
+            JOIN usuarios u ON s.usuario = u.usuario
             WHERE s.token = ?
         """, (token,))
         user = cursor.fetchone()
@@ -218,13 +408,18 @@ def cerrar_sesion_db(token):
     except Exception:
         pass
 
+def preparar_imagen(image_pil, max_dim=1024, calidad=85):
+    imagen = image_pil.convert("RGB")
+    imagen.thumbnail((max_dim, max_dim), Image.LANCZOS)
+    return imagen
+
 def encode_image_to_base64(image_pil):
-    import io
     buffered = io.BytesIO()
-    image_pil.save(buffered, format="JPEG")
+    image_pil.save(buffered, format="JPEG", quality=85, optimize=True)
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-# --- PERSISTENCIA VÍA TOKEN EN URL Y SQLITE ---
+inject_pwa()
+
 params = st.query_params
 
 if "autenticado" not in st.session_state:
@@ -243,26 +438,31 @@ if "autenticado" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# --- PANTALLA DE LOGIN ---
 if not st.session_state.autenticado:
-    col1, col2, col3 = st.columns([1, 2, 1])
+    try_restore_from_local_storage()
+
+    st.markdown('<div class="login-wrapper">', unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 1.3, 1])
     with col2:
-        st.title("AGRO IA")
-        st.caption("Plataforma de Diagnóstico y Monitoreo Agrícola")
-        
+        st.markdown('<div class="login-card">', unsafe_allow_html=True)
+        st.markdown('<div class="login-icon">🌿</div>', unsafe_allow_html=True)
+        st.markdown('<div class="login-title">AGRO IA</div>', unsafe_allow_html=True)
+        st.markdown('<div class="login-caption">Plataforma de Diagnóstico y Monitoreo Agrícola</div>', unsafe_allow_html=True)
+
         tab1, tab2 = st.tabs(["Iniciar Sesión", "Registrarse"])
         with tab1:
             user_input = st.text_input("Usuario o Correo", key="l_user")
             pass_input = st.text_input("Contraseña", type="password", key="l_pass")
-            if st.button("Ingresar", use_container_width=True):
+            if st.button("Ingresar", use_container_width=True, key="btn_login"):
                 user, token, msj = autenticar_usuario(user_input, pass_input)
                 if user:
                     st.session_state.autenticado = True
                     st.session_state.usuario = user[1]
                     st.session_state.nombre_completo = user[4] or user[1]
                     st.session_state.token = token
-                    
+
                     st.query_params["session_token"] = token
+                    set_local_storage_token(token)
                     st.rerun()
                 else:
                     st.error(msj)
@@ -271,40 +471,41 @@ if not st.session_state.autenticado:
             n_user = st.text_input("Usuario", key="r_user")
             n_mail = st.text_input("Correo", key="r_mail")
             n_pass = st.text_input("Contraseña", type="password", key="r_pass")
-            if st.button("Crear Cuenta", use_container_width=True):
+            if st.button("Crear Cuenta", use_container_width=True, key="btn_register"):
                 ok, msj = registrar_usuario(n_user, n_mail, n_pass, n_name)
                 if ok:
                     st.success(msj)
                 else:
                     st.error(msj)
+        st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# --- PANEL PRINCIPAL ---
 else:
     st.sidebar.title("AGRO IA")
     st.sidebar.caption(f"Usuario: {st.session_state.usuario}")
     st.sidebar.write("---")
-    
+
     opcion = st.sidebar.radio(
         "Navegación",
-        ["Inicio e Historial", "Detectar Plaga", "Asistente Virtual", "Mi Cuenta"]
+        ["Inicio e Historial", "Detectar Plaga", "Asistente Virtual", "Mi Cuenta"],
+        label_visibility="collapsed"
     )
 
-    # --- 1. INICIO E HISTORIAL ---
     if opcion == "Inicio e Historial":
         st.title(f"Bienvenido, {st.session_state.nombre_completo}")
         st.caption("Consulta el registro y la evolución de los diagnósticos de tus cultivos.")
-        
+
         st.subheader("Historial de Diagnósticos")
-        
+
         try:
             conn = sqlite3.connect(DB_NAME)
             df = pd.read_sql_query(
-                "SELECT fecha AS Fecha, cultivo AS Cultivo, diagnostico AS Resumen FROM historial WHERE usuario = ? ORDER BY fecha DESC", 
-                conn, 
+                "SELECT fecha AS Fecha, cultivo AS Cultivo, diagnostico AS Resumen FROM historial WHERE usuario = ? ORDER BY fecha DESC",
+                conn,
                 params=(st.session_state.usuario,)
             )
             conn.close()
-            
+
             if not df.empty:
                 st.dataframe(df, use_container_width=True)
             else:
@@ -312,7 +513,6 @@ else:
         except Exception as e:
             st.error(f"Error al cargar historial: {e}")
 
-    # --- 2. DETECTAR PLAGA ---
     elif opcion == "Detectar Plaga":
         st.title("Diagnóstico de Cultivo")
         st.caption("Sube una imagen o toma una foto para analizar el estado de salud de tu muestra.")
@@ -322,20 +522,21 @@ else:
         with col1:
             st.subheader("Entrada de Muestra")
             origen = st.radio("Método de captura:", ["Subir Archivo", "Cámara Directa"])
-            
+
             imagen_file = None
             if origen == "Subir Archivo":
                 imagen_file = st.file_uploader("Formatos: JPG, PNG", type=["jpg", "png", "jpeg"])
             else:
                 imagen_file = st.camera_input("Capturar foto")
 
+            img = None
             if imagen_file:
-                img = Image.open(imagen_file).convert("RGB")
+                img = preparar_imagen(Image.open(imagen_file))
                 st.image(img, caption="Muestra cargada", use_container_width=True)
 
         with col2:
             st.subheader("Informe del Diagnóstico")
-            if imagen_file:
+            if imagen_file and img is not None:
                 if st.button("Ejecutar Análisis", use_container_width=True):
                     with st.spinner("Procesando imagen..."):
                         if client:
@@ -343,14 +544,14 @@ else:
                                 base64_image = encode_image_to_base64(img)
                                 prompt_analisis = """
                                 Analiza esta imagen agrícola. Explica todo con lenguaje muy sencillo, directo y fácil de entender.
-                                
+
                                 Responde en estas 4 secciones claras:
                                 1. Planta y Problema Detectado (Especie y daño visto en palabras sencillas).
                                 2. Nivel de Gravedad (Bajo, Medio o Alto).
                                 3. Soluciones Recomendadas (Remedios caseros orgánicos y opción comercial de tienda).
                                 4. Prevención (Consejos simples para evitar que vuelva a suceder).
                                 """
-                                
+
                                 response = client.chat.completions.create(
                                     model="gpt-5.6-luna",
                                     messages=[{
@@ -363,17 +564,17 @@ else:
                                     reasoning_effort="none",
                                     max_completion_tokens=1200
                                 )
-                                
+
                                 resultado = response.choices[0].message.content
                                 st.markdown(resultado)
-                                
+
                                 conn = sqlite3.connect(DB_NAME)
                                 cursor = conn.cursor()
                                 cursor.execute("INSERT INTO historial (usuario, cultivo, diagnostico) VALUES (?, ?, ?)",
                                                (st.session_state.usuario, "Auto-detectado", resultado[:100] + "..."))
                                 conn.commit()
                                 conn.close()
-                                
+
                             except Exception as e:
                                 st.error(f"Error al analizar: {e}")
                         else:
@@ -381,7 +582,6 @@ else:
             else:
                 st.info("Carga una foto en el panel izquierdo para ver los resultados aquí.")
 
-    # --- 3. ASISTENTE VIRTUAL ---
     elif opcion == "Asistente Virtual":
         st.title("Asistente Agrónomo")
         st.caption("Consulta dudas y dale seguimiento a tus conversaciones anteriores.")
@@ -419,7 +619,7 @@ else:
                 st.session_state.current_chat_id = cursor.lastrowid
 
             st.session_state.messages.append({"role": "user", "content": prompt})
-            cursor.execute("INSERT INTO mensajes (conversacion_id, rol, contenido) VALUES (?, ?, ?)", 
+            cursor.execute("INSERT INTO mensajes (conversacion_id, rol, contenido) VALUES (?, ?, ?)",
                            (st.session_state.current_chat_id, "user", prompt))
             conn.commit()
 
@@ -438,9 +638,9 @@ else:
                         )
                         text = res.choices[0].message.content
                         st.markdown(text)
-                        
+
                         st.session_state.messages.append({"role": "assistant", "content": text})
-                        cursor.execute("INSERT INTO mensajes (conversacion_id, rol, contenido) VALUES (?, ?, ?)", 
+                        cursor.execute("INSERT INTO mensajes (conversacion_id, rol, contenido) VALUES (?, ?, ?)",
                                        (st.session_state.current_chat_id, "assistant", text))
                         conn.commit()
                         st.rerun()
@@ -448,30 +648,31 @@ else:
                         st.error(f"Error: {e}")
                 else:
                     st.error("No hay API Key configurada.")
-        
+
         conn.close()
 
-    # --- 4. MI CUENTA ---
     elif opcion == "Mi Cuenta":
         st.title("Gestión de Cuenta")
         st.caption("Información del perfil de usuario y opciones de sesión.")
-        
+
         st.write(f"**Nombre:** {st.session_state.nombre_completo}")
         st.write(f"**Usuario:** {st.session_state.usuario}")
         st.write("---")
-        
+
         col_logout, _ = st.columns([1, 2])
         with col_logout:
             if st.button("Cerrar Sesión", use_container_width=True):
                 if "token" in st.session_state:
                     cerrar_sesion_db(st.session_state.token)
-                
+
+                clear_local_storage_token()
+
                 st.session_state.autenticado = False
                 st.session_state.usuario = ""
                 st.session_state.nombre_completo = ""
                 st.session_state.messages = []
                 if "current_chat_id" in st.session_state:
                     del st.session_state.current_chat_id
-                
+
                 st.query_params.clear()
                 st.rerun()
