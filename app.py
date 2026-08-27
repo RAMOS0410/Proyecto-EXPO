@@ -23,7 +23,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ESTILOS CSS Y ANIMACIONES ---
+# --- ESTILOS CSS CORREGIDOS (MODO CLARO Y OSCURO) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
@@ -32,19 +32,16 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
     }
 
-    h1, h2, h3, h4, .login-title, [data-testid="stSidebar"] div[role="radiogroup"] label {
-        font-family: 'Poppins', sans-serif !important;
-    }
-
+    /* MODO CLARO POR DEFECTO */
     :root {
-        --bg-main: #f6f9f6;
+        --bg-main: #f4f8f5;
         --card-bg: #ffffff;
-        --card-border: #e5eae4;
-        --text-title: #1a2e22;
-        --text-body: #5b6b62;
+        --card-border: #dbe6de;
+        --text-title: #0f291e;
+        --text-body: #37493f;
         --sidebar-bg: #1b4d3a;
         --sidebar-bg-2: #14352a;
-        --sidebar-text: #f3f8f4;
+        --sidebar-text: #ffffff;
         --primary-btn: #2f7d4f;
         --primary-btn-hover: #1f5c39;
         --accent: #22c55e;
@@ -53,22 +50,23 @@ st.markdown("""
         --shadow-tint: 47, 125, 79;
     }
 
+    /* MODO OSCURO AUTOMÁTICO */
     @media (prefers-color-scheme: dark) {
         :root {
-            --bg-main: #10201a;
-            --card-bg: #172c22;
-            --card-border: #274435;
-            --text-title: #eef7ef;
-            --text-body: #b7cabf;
-            --sidebar-bg: #0d1f17;
-            --sidebar-bg-2: #14352a;
-            --sidebar-text: #f3f8f4;
-            --primary-btn: #2f9d5f;
-            --primary-btn-hover: #3fbd75;
+            --bg-main: #0c1813;
+            --card-bg: #14261e;
+            --card-border: #213c30;
+            --text-title: #e6f4ea;
+            --text-body: #a3c2b0;
+            --sidebar-bg: #091712;
+            --sidebar-bg-2: #122c22;
+            --sidebar-text: #ffffff;
+            --primary-btn: #258d53;
+            --primary-btn-hover: #31ab67;
             --accent: #4ade80;
-            --accent-2: #1f3b2c;
-            --accent-3: #274435;
-            --shadow-tint: 63, 189, 117;
+            --accent-2: #1b382b;
+            --accent-3: #224535;
+            --shadow-tint: 50, 205, 120;
         }
     }
 
@@ -82,38 +80,50 @@ st.markdown("""
         50% { transform: translateY(-6px); }
     }
 
-    .stApp { background-color: var(--bg-main) !important; }
+    .stApp { 
+        background-color: var(--bg-main) !important; 
+    }
 
     .main .block-container {
         animation: fadeInUp 0.5s ease both;
     }
 
+    /* FORZAR COLORES EN TEXTOS Y ENCABEZADOS DE STREAMLIT */
+    .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6,
+    [data-testid="stHeader"] *, [data-testid="stMarkdownContainer"] h1, 
+    [data-testid="stMarkdownContainer"] h2, [data-testid="stMarkdownContainer"] h3 {
+        color: var(--text-title) !important;
+        font-family: 'Poppins', sans-serif !important;
+        font-weight: 800 !important;
+    }
+
+    .stApp p, .stApp span, .stApp label, [data-testid="stMarkdownContainer"] p {
+        color: var(--text-body) !important;
+    }
+
+    /* BARRA LATERAL (SIDEBAR) */
     [data-testid="stSidebar"] {
         background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--sidebar-bg-2) 100%) !important;
         padding-top: 1rem;
     }
 
-    [data-testid="stSidebar"] * { color: var(--sidebar-text) !important; }
-
-    h1, h2, h3, h4 {
-        color: var(--text-title) !important;
-        font-weight: 800 !important;
-        letter-spacing: -0.02em;
+    [data-testid="stSidebar"] * { 
+        color: var(--sidebar-text) !important; 
     }
 
-    p, span, label { color: var(--text-body); }
-
+    /* TARJETAS Y CONTENEDORES */
     div[data-testid="stVerticalBlock"] > div > div[data-testid="stVerticalBlock"] {
         background-color: var(--card-bg) !important;
         border-radius: 16px !important;
         padding: 22px !important;
         border: 1px solid var(--card-border) !important;
         margin-bottom: 14px !important;
-        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
         transition: box-shadow 0.25s ease, transform 0.25s ease;
         animation: fadeInUp 0.45s ease both;
     }
 
+    /* BOTONES */
     div.stButton > button {
         background: linear-gradient(135deg, var(--primary-btn), var(--primary-btn-hover)) !important;
         color: #ffffff !important;
@@ -124,20 +134,16 @@ st.markdown("""
         padding: 0.8rem 1.8rem !important;
         font-size: 16px !important;
         letter-spacing: 0.01em;
-        transition: transform 0.2s cubic-bezier(.34,1.56,.64,1), box-shadow 0.2s ease, filter 0.2s ease !important;
+        transition: transform 0.2s cubic-bezier(.34,1.56,.64,1), box-shadow 0.2s ease !important;
         box-shadow: 0 4px 14px rgba(var(--shadow-tint), 0.35);
     }
 
     div.stButton > button:hover {
-        transform: translateY(-3px) scale(1.03);
-        filter: brightness(1.08);
-        box-shadow: 0 10px 24px rgba(var(--shadow-tint), 0.45);
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 8px 20px rgba(var(--shadow-tint), 0.45);
     }
 
-    div.stButton > button:active {
-        transform: translateY(0) scale(0.97);
-    }
-
+    /* NAVEGACIÓN LATERAL */
     [data-testid="stSidebar"] div[role="radiogroup"] {
         gap: 10px;
         display: flex;
@@ -150,34 +156,38 @@ st.markdown("""
         width: 100%;
         padding: 14px 18px !important;
         border-radius: 14px !important;
-        background-color: rgba(255, 255, 255, 0.07);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        transition: all 0.28s cubic-bezier(.34,1.56,.64,1);
+        background-color: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        transition: all 0.25s ease;
         cursor: pointer;
-        font-size: 16px !important;
-        font-weight: 600 !important;
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label:hover {
         background-color: rgba(255, 255, 255, 0.18);
-        transform: translateX(6px) scale(1.02);
+        transform: translateX(4px);
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
-        background: linear-gradient(135deg, var(--accent-3), var(--accent-2)) !important;
-        color: var(--sidebar-bg) !important;
+        background: #ffffff !important;
         border-color: transparent;
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
-        transform: scale(1.03);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p {
-        color: var(--sidebar-bg) !important;
+        color: #1b4d3a !important;
         font-weight: 800 !important;
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label [data-baseweb="radio"] > div:first-child {
         display: none !important;
+    }
+
+    /* CAMPOS DE TEXTO E ENTRADAS */
+    input[type="text"], input[type="password"] {
+        background-color: var(--card-bg) !important;
+        color: var(--text-title) !important;
+        border: 1px solid var(--card-border) !important;
+        border-radius: 10px !important;
     }
 
     .login-icon {
@@ -192,25 +202,14 @@ st.markdown("""
         font-size: 30px;
         font-weight: 800;
         margin-bottom: 2px;
-        background: linear-gradient(135deg, var(--primary-btn-hover), var(--accent));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: var(--primary-btn) !important;
     }
 
     .login-caption {
         text-align: center;
-        color: var(--text-body);
+        color: var(--text-body) !important;
         font-size: 14px;
         margin-bottom: 22px;
-    }
-
-    input[type="text"], input[type="password"] {
-        border-radius: 10px !important;
-    }
-
-    .stAlert {
-        border-radius: 12px;
-        animation: fadeInUp 0.35s ease both;
     }
     </style>
 """, unsafe_allow_html=True)
