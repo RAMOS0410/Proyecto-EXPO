@@ -23,52 +23,25 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ESTILOS CSS CON PALETA VERDE, BLANCO Y CREMA ---
+# --- ESTILOS CSS (PALETA ÚNICA DE COLOR: VERDE, CREMA Y BLANCO) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
-    /* PALETA GLOBAL (VERDE, CREMA Y BLANCO) */
-    :root, [data-theme="light"], [data-theme="dark"] {
-        --bg-main: #F4F9F4;           /* Verde menta ultra claro */
+    /* PALETA ÚNICA DE COLOR */
+    :root, body, html {
+        --bg-main: #F4F9F4;           /* Verde menta suave */
         --card-bg: #FFFFFF;           /* Blanco puro */
-        --card-crema: #FAF8F5;        /* Crema suave */
         --card-border: #D8F3DC;       /* Verde claro para bordes */
-        --text-title: #081C15;        /* Verde oscuro profundo */
-        --text-body: #1B4332;         /* Verde bosque para lectura */
-        --sidebar-bg: #1B4332;       /* Verde bosque principal */
-        --sidebar-bg-2: #2D6A4F;     /* Verde de acento */
-        --sidebar-text: #FFFFFF;      /* Blanco */
-        --primary-btn: #2D6A4F;       /* Verde botón */
-        --primary-btn-hover: #40916C; /* Verde brillante al pasar el mouse */
-        --radio-checked-bg: #FFFFFF;
-        --radio-checked-text: #1B4332;
-        --input-bg: #FAF8F5;          /* Fondo crema para inputs */
-        --input-text: #081C15;
+        --text-title: #081C15;        /* Verde oscuro para títulos */
+        --text-body: #1B4332;         /* Verde bosque para lecturas */
+        --sidebar-bg: #1B4332;       /* Fondo lateral arriba */
+        --sidebar-bg-2: #2D6A4F;     /* Fondo lateral abajo */
+        --primary-btn: #2D6A4F;       /* Botones principales */
+        --primary-btn-hover: #40916C; /* Hover de botones */
     }
 
-    /* DESACTIVAR FORZADO MODO OSCURO DEL NAVEGADOR */
-    @media (prefers-color-scheme: dark) {
-        :root {
-            --bg-main: #F4F9F4 !important;
-            --card-bg: #FFFFFF !important;
-            --card-crema: #FAF8F5 !important;
-            --card-border: #D8F3DC !important;
-            --text-title: #081C15 !important;
-            --text-body: #1B4332 !important;
-            --sidebar-bg: #1B4332 !important;
-            --sidebar-bg-2: #2D6A4F !important;
-            --sidebar-text: #FFFFFF !important;
-            --primary-btn: #2D6A4F !important;
-            --primary-btn-hover: #40916C !important;
-            --radio-checked-bg: #FFFFFF !important;
-            --radio-checked-text: #1B4332 !important;
-            --input-bg: #FAF8F5 !important;
-            --input-text: #081C15 !important;
-        }
-    }
-
-    /* APLICACIÓN GLOBAL DE ESTILOS */
+    /* FONDO GENERAL DE LA APLICACIÓN */
     html, body, [data-testid="stAppViewContainer"], .stApp {
         background-color: var(--bg-main) !important;
         color: var(--text-body) !important;
@@ -79,7 +52,7 @@ st.markdown("""
         background-color: transparent !important;
     }
 
-    /* ENCABEZADOS */
+    /* TIPOGRAFÍAS Y ENCABEZADOS */
     .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6,
     [data-testid="stMarkdownContainer"] h1, 
     [data-testid="stMarkdownContainer"] h2, 
@@ -98,11 +71,38 @@ st.markdown("""
         background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--sidebar-bg-2) 100%) !important;
     }
 
-    [data-testid="stSidebar"] * { 
-        color: var(--sidebar-text) !important; 
+    /* BOTONES DE LA BARRA LATERAL (OPCIONES INACTIVAS - BLANCO SÓLIDO) */
+    [data-testid="stSidebar"] div[role="radiogroup"] label {
+        background-color: #FFFFFF !important;
+        border: 1.5px solid #D8F3DC !important;
+        border-radius: 12px !important;
+        padding: 12px 16px !important;
+        margin-bottom: 8px !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
     }
 
-    /* CONTENEDORES Y TARJETAS */
+    [data-testid="stSidebar"] div[role="radiogroup"] label p {
+        color: #1B4332 !important;
+        font-weight: 600 !important;
+    }
+
+    /* BOTÓN SELECCIONADO EN LA BARRA LATERAL */
+    [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
+        background-color: #D8F3DC !important;
+        border-color: #40916C !important;
+    }
+
+    [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p {
+        color: #081C15 !important;
+        font-weight: 800 !important;
+    }
+
+    /* OCULTAR CÍRCULO RADIO POR DEFECTO */
+    [data-testid="stSidebar"] div[role="radiogroup"] label [data-baseweb="radio"] > div:first-child {
+        display: none !important;
+    }
+
+    /* TARJETAS Y CONTENEDORES INTERNOS */
     div[data-testid="stVerticalBlock"] > div > div[data-testid="stVerticalBlock"] {
         background-color: var(--card-bg) !important;
         border-radius: 16px !important;
@@ -111,7 +111,7 @@ st.markdown("""
         box-shadow: 0 4px 16px rgba(45, 106, 79, 0.06) !important;
     }
 
-    /* BOTONES */
+    /* BOTONES PRINCIPALES (EJECUTAR ANÁLISIS, INICIAR SESIÓN, ETC.) */
     div.stButton > button {
         background-color: var(--primary-btn) !important;
         color: #FFFFFF !important;
@@ -130,34 +130,36 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(45, 106, 79, 0.2) !important;
     }
 
-    /* CAMPOS DE ENTRADA (ESTILO CREMA) */
+    /* FILE UPLOADER (SUBIDA DE ARCHIVOS) */
+    [data-testid="stFileUploader"] {
+        background-color: #FFFFFF !important;
+        border: 1.5px dashed #40916C !important;
+        border-radius: 12px !important;
+        padding: 10px !important;
+    }
+
+    [data-testid="stFileUploader"] * {
+        color: #1B4332 !important;
+    }
+
+    /* CUADROS DE NOTIFICACIÓN / INFORMACIÓN */
+    div[data-testid="stNotification"] {
+        background-color: #E8F5E9 !important;
+        color: #1B4332 !important;
+        border: 1px solid #B7E4C7 !important;
+        border-radius: 12px !important;
+    }
+
+    div[data-testid="stNotification"] * {
+        color: #1B4332 !important;
+    }
+
+    /* INPUTS DE TEXTO Y CONTRASEÑA */
     input[type="text"], input[type="password"] {
-        background-color: var(--input-bg) !important;
-        color: var(--input-text) !important;
+        background-color: #FAF8F5 !important;
+        color: #081C15 !important;
         border: 1.5px solid var(--card-border) !important;
         border-radius: 10px !important;
-    }
-
-    /* MENÚ LATERAL SELECCIONABLE */
-    [data-testid="stSidebar"] div[role="radiogroup"] label {
-        background-color: rgba(255, 255, 255, 0.1) !important;
-        border: 1px solid rgba(255, 255, 255, 0.18) !important;
-        border-radius: 12px !important;
-        padding: 12px 16px !important;
-        margin-bottom: 8px !important;
-    }
-
-    [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
-        background: var(--radio-checked-bg) !important;
-    }
-
-    [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p {
-        color: var(--radio-checked-text) !important;
-        font-weight: 700 !important;
-    }
-
-    [data-testid="stSidebar"] div[role="radiogroup"] label [data-baseweb="radio"] > div:first-child {
-        display: none !important;
     }
     </style>
 """, unsafe_allow_html=True)
