@@ -90,23 +90,28 @@ st.markdown("""
         border-radius: 10px !important;
     }
 
-    /* FIX DEFINITIVO PARA CHAT INPUT (MODO CLARO Y OSCURO) */
-    [data-testid="stChatInput"] {
-        background-color: #1B4332 !important;
+    /* FIX DEFINITIVO PARA CHAT INPUT */
+    [data-testid="stChatInput"],
+    [data-testid="stChatInput"] > div,
+    [data-testid="stChatInput"] div[data-baseweb="base-input"],
+    [data-testid="stChatInput"] div[data-baseweb="input"] {
+        background-color: #FFFFFF !important;
+        border-color: #2D6A4F !important;
         border-radius: 16px !important;
-        border: 1.5px solid #2D6A4F !important;
-        padding: 4px !important;
     }
 
-    [data-testid="stChatInput"] textarea {
-        color: #FFFFFF !important;
-        -webkit-text-fill-color: #FFFFFF !important;
+    [data-testid="stChatInput"] textarea,
+    [data-testid="stChatInput"] input {
+        color: #081C15 !important;
+        -webkit-text-fill-color: #081C15 !important;
         background-color: transparent !important;
+        font-weight: 500 !important;
     }
 
-    [data-testid="stChatInput"] textarea::placeholder {
-        color: #B7E4C7 !important;
-        -webkit-text-fill-color: #B7E4C7 !important;
+    [data-testid="stChatInput"] textarea::placeholder,
+    [data-testid="stChatInput"] input::placeholder {
+        color: #555555 !important;
+        -webkit-text-fill-color: #555555 !important;
     }
 
     /* --- BARRA LATERAL --- */
@@ -123,7 +128,7 @@ st.markdown("""
     [data-testid="stSidebar"] p, 
     [data-testid="stSidebar"] span, 
     [data-testid="stSidebar"] label,
-    [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+    [data-testid="stSidebar"] [data-captioncontainer="true"] {
         color: #D8F3DC !important;
         font-weight: 500 !important;
     }
