@@ -23,12 +23,12 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ESTILOS CSS CON DETECCIÓN AUTOMÁTICA DE MODO CLARO Y OSCURO ---
+# --- ESTILOS CSS CON DETECCIÓN AUTOMÁTICA CORREGIDA ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
-    /* 1. PALETA MODO CLARO (Basada en tu diseño) */
+    /* 1. PALETA MODO CLARO (POR DEFECTO) */
     :root {
         --bg-main: #F8F9FA;
         --card-bg: #FFFFFF;
@@ -40,9 +40,11 @@ st.markdown("""
         --sidebar-text: #FFFFFF;
         --primary-btn: #3A5A40;
         --primary-btn-hover: #588157;
+        --radio-checked-bg: #FFFFFF;
+        --radio-checked-text: #344E41;
     }
 
-    /* 2. PALETA MODO OSCURO (Automático según el sistema) */
+    /* 2. PALETA MODO OSCURO (SOLO SI EL SISTEMA LO SOLICITA) */
     @media (prefers-color-scheme: dark) {
         :root {
             --bg-main: #121C17;
@@ -55,10 +57,12 @@ st.markdown("""
             --sidebar-text: #FFFFFF;
             --primary-btn: #588157;
             --primary-btn-hover: #6C9A6B;
+            --radio-checked-bg: #3A5A40;
+            --radio-checked-text: #FFFFFF;
         }
     }
 
-    /* APLICACIÓN DE VARIABLES DINÁMICAS */
+    /* APLICACIÓN DE VARIABLES A LOS ELEMENTOS DE STREAMLIT */
     html, body, [data-testid="stAppViewContainer"], .stApp {
         background-color: var(--bg-main) !important;
         color: var(--text-body) !important;
@@ -98,7 +102,7 @@ st.markdown("""
         border-radius: 16px !important;
         padding: 24px !important;
         border: 1.5px solid var(--card-border) !important;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08) !important;
     }
 
     /* BOTONES */
@@ -137,11 +141,11 @@ st.markdown("""
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
-        background: #FFFFFF !important;
+        background: var(--radio-checked-bg) !important;
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p {
-        color: #344E41 !important;
+        color: var(--radio-checked-text) !important;
         font-weight: 700 !important;
     }
 
