@@ -23,73 +23,41 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ESTILOS CSS BASADOS EN TU PALETA DE DISEÑO ---
+# --- ESTILOS CSS CON FORZADO TOTAL DE MODO CLARO ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
-    }
-
-    /* PALETA DE COLORES EXTRAÍDA DE TU MOCKUP */
+    /* COLORES FIJOS DEL MODO CLARO (SIN MEDIA QUERIES) */
     :root {
-        --bg-main: #f9f8f6;            /* Fondo crema/blanco suave */
-        --card-bg: #ffffff;            /* Fondo de tarjetas blancas */
-        --card-border: #dad7cd;        /* Borde beige/verde suave (#DAD7CD) */
-        --text-title: #344e41;        /* Verde muy oscuro para títulos (#344E41) */
-        --text-body: #3a5a40;         /* Verde boscoso para texto principal (#3A5A40) */
-        --sidebar-bg: #344e41;        /* Fondo barra lateral verde oscuro */
-        --sidebar-bg-2: #283e33;      /* Gradiente inferior barra lateral */
-        --sidebar-text: #ffffff;      /* Texto blanco en barra lateral */
-        --primary-btn: #3a5a40;       /* Botón principal verde (#3A5A40) */
-        --primary-btn-hover: #588157; /* Hover verde claro (#588157) */
-        --accent: #588157;            /* Acento verde */
-        --accent-light: #dad7cd;      /* Fondo claro elementos seleccionados */
-        --shadow-tint: 58, 90, 64;
+        --bg-main: #F8F9FA !important;
+        --card-bg: #FFFFFF !important;
+        --card-border: #DAD7CD !important;
+        --text-title: #344E41 !important;
+        --text-body: #3A5A40 !important;
+        --sidebar-bg: #344E41 !important;
+        --sidebar-bg-2: #2A3F34 !important;
+        --sidebar-text: #FFFFFF !important;
+        --primary-btn: #3A5A40 !important;
+        --primary-btn-hover: #588157 !important;
     }
 
-    /* MODO OSCURO MANTENIENDO TU TONALIDAD VERDE */
-    @media (prefers-color-scheme: dark) {
-        :root {
-            --bg-main: #19241e;
-            --card-bg: #223329;
-            --card-border: #344e41;
-            --text-title: #e3ede7;
-            --text-body: #a3b8ac;
-            --sidebar-bg: #141f19;
-            --sidebar-bg-2: #1b2a22;
-            --sidebar-text: #ffffff;
-            --primary-btn: #588157;
-            --primary-btn-hover: #6c9a6b;
-            --accent: #a3b8ac;
-            --accent-light: #344e41;
-            --shadow-tint: 88, 129, 87;
-        }
+    /* FORZAR FONDO PRINCIPAL Y FUENTE */
+    html, body, [data-testid="stAppViewContainer"], .stApp {
+        background-color: var(--bg-main) !important;
+        color: var(--text-body) !important;
+        font-family: 'Inter', sans-serif !important;
     }
 
-    @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(12px); }
-        to { opacity: 1; transform: translateY(0); }
+    [data-testid="stHeader"] {
+        background-color: transparent !important;
     }
 
-    @keyframes floatIcon {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-6px); }
-    }
-
-    .stApp { 
-        background-color: var(--bg-main) !important; 
-    }
-
-    .main .block-container {
-        animation: fadeInUp 0.4s ease both;
-    }
-
-    /* FORZAR COLORES EN TEXTOS Y ENCABEZADOS DE STREAMLIT */
+    /* TEXTOS Y ENCABEZADOS DE LA APLICACIÓN */
     .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6,
-    [data-testid="stHeader"] *, [data-testid="stMarkdownContainer"] h1, 
-    [data-testid="stMarkdownContainer"] h2, [data-testid="stMarkdownContainer"] h3 {
+    [data-testid="stMarkdownContainer"] h1, 
+    [data-testid="stMarkdownContainer"] h2, 
+    [data-testid="stMarkdownContainer"] h3 {
         color: var(--text-title) !important;
         font-family: 'Poppins', sans-serif !important;
         font-weight: 700 !important;
@@ -99,76 +67,69 @@ st.markdown("""
         color: var(--text-body) !important;
     }
 
-    /* BARRA LATERAL (SIDEBAR) */
+    /* BARRA LATERAL (SIDEBAR VERDE OSCURO) */
     [data-testid="stSidebar"] {
         background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--sidebar-bg-2) 100%) !important;
-        padding-top: 1rem;
     }
 
     [data-testid="stSidebar"] * { 
         color: var(--sidebar-text) !important; 
     }
 
-    /* TARJETAS DE CONTENIDO */
+    /* TARJETAS DE CONTENIDO EN BLANCO */
     div[data-testid="stVerticalBlock"] > div > div[data-testid="stVerticalBlock"] {
         background-color: var(--card-bg) !important;
-        border-radius: 18px !important;
+        border-radius: 16px !important;
         padding: 24px !important;
         border: 1.5px solid var(--card-border) !important;
-        margin-bottom: 14px !important;
-        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
-        transition: box-shadow 0.25s ease, transform 0.25s ease;
-        animation: fadeInUp 0.4s ease both;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04) !important;
     }
 
-    /* BOTONES ESTILO MOCKUP */
+    /* INFORMACIÓN DE ALERTAS E NOTIFICACIONES */
+    [data-testid="stAlert"] {
+        background-color: #E8F5E9 !important;
+        color: var(--text-title) !important;
+        border: 1px solid var(--card-border) !important;
+        border-radius: 12px !important;
+    }
+
+    /* BOTONES */
     div.stButton > button {
-        background: var(--primary-btn) !important;
-        color: #ffffff !important;
+        background-color: var(--primary-btn) !important;
+        color: #FFFFFF !important;
         border-radius: 12px !important;
         border: none !important;
         font-family: 'Poppins', sans-serif !important;
         font-weight: 600 !important;
         padding: 0.75rem 1.6rem !important;
         font-size: 15px !important;
-        transition: all 0.25s ease !important;
-        box-shadow: 0 4px 12px rgba(var(--shadow-tint), 0.25);
+        transition: all 0.2s ease !important;
     }
 
     div.stButton > button:hover {
-        background: var(--primary-btn-hover) !important;
+        background-color: var(--primary-btn-hover) !important;
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(var(--shadow-tint), 0.35);
     }
 
-    /* NAVEGACIÓN LATERAL ESTILO APP MÓVIL */
-    [data-testid="stSidebar"] div[role="radiogroup"] {
-        gap: 10px;
-        display: flex;
-        flex-direction: column;
+    /* CAMPOS DE ENTRADA DE TEXTO */
+    input[type="text"], input[type="password"] {
+        background-color: #FFFFFF !important;
+        color: var(--text-title) !important;
+        border: 1.5px solid var(--card-border) !important;
+        border-radius: 10px !important;
     }
 
+    /* RADIOS NAVEGACIÓN LATERAL */
     [data-testid="stSidebar"] div[role="radiogroup"] label {
-        display: flex;
-        align-items: center;
-        width: 100%;
-        padding: 12px 16px !important;
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
         border-radius: 12px !important;
-        background-color: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        transition: all 0.25s ease;
-        cursor: pointer;
-    }
-
-    [data-testid="stSidebar"] div[role="radiogroup"] label:hover {
-        background-color: rgba(255, 255, 255, 0.18);
-        transform: translateX(4px);
+        padding: 12px 16px !important;
+        margin-bottom: 8px !important;
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
-        background: #ffffff !important;
-        border-color: transparent;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+        background: #FFFFFF !important;
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p {
@@ -178,41 +139,6 @@ st.markdown("""
 
     [data-testid="stSidebar"] div[role="radiogroup"] label [data-baseweb="radio"] > div:first-child {
         display: none !important;
-    }
-
-    /* CAMPOS DE ENTRADA */
-    input[type="text"], input[type="password"] {
-        background-color: #ffffff !important;
-        color: var(--text-title) !important;
-        border: 1.5px solid var(--card-border) !important;
-        border-radius: 10px !important;
-    }
-
-    input[type="text"]:focus, input[type="password"]:focus {
-        border-color: var(--primary-btn) !important;
-        box-shadow: 0 0 0 3px rgba(58, 90, 64, 0.15) !important;
-    }
-
-    .login-icon {
-        font-size: 56px;
-        text-align: center;
-        animation: floatIcon 3s ease-in-out infinite;
-        margin-bottom: 6px;
-    }
-
-    .login-title {
-        text-align: center;
-        font-size: 32px;
-        font-weight: 800;
-        margin-bottom: 2px;
-        color: var(--primary-btn) !important;
-    }
-
-    .login-caption {
-        text-align: center;
-        color: var(--text-body) !important;
-        font-size: 14px;
-        margin-bottom: 22px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -431,9 +357,9 @@ if not st.session_state.autenticado:
 
     col1, col2, col3 = st.columns([1, 1.3, 1])
     with col2:
-        st.markdown('<div class="login-icon">🌿</div>', unsafe_allow_html=True)
-        st.markdown('<div class="login-title">AGRO IA</div>', unsafe_allow_html=True)
-        st.markdown('<div class="login-caption">Inteligencia Artificial para el cuidado de tus cultivos</div>', unsafe_allow_html=True)
+        st.markdown('<div style="font-size: 56px; text-align: center; margin-bottom: 6px;">🌿</div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align: center; font-size: 32px; font-weight: 800; color: #344E41;">AGRO IA</div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align: center; color: #3A5A40; font-size: 14px; margin-bottom: 22px;">Inteligencia Artificial para el cuidado de tus cultivos</div>', unsafe_allow_html=True)
 
         tab1, tab2 = st.tabs(["Iniciar Sesión", "Registrarse"])
         with tab1:
