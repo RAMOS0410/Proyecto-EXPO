@@ -82,23 +82,31 @@ st.markdown("""
         color: #081C15 !important;
     }
 
-    /* FIX PARA INPUTS Y CHAT INPUT EN MODO OSCURO */
+    /* INPUTS DE TEXTO DE FORMULARIOS */
     input[type="text"], input[type="password"] {
-        background-color: #FAF8F5 !important;
+        background-color: #FFFFFF !important;
         color: #081C15 !important;
         border: 1.5px solid var(--card-border) !important;
         border-radius: 10px !important;
     }
 
-    /* ESTILO ESPECÍFICO PARA EL CUADRO DE CHAT (st.chat_input) */
+    /* FIX DEFINITIVO PARA CHAT INPUT (MODO CLARO Y OSCURO) */
+    [data-testid="stChatInput"] {
+        background-color: #1B4332 !important;
+        border-radius: 16px !important;
+        border: 1.5px solid #2D6A4F !important;
+        padding: 4px !important;
+    }
+
     [data-testid="stChatInput"] textarea {
         color: #FFFFFF !important;
         -webkit-text-fill-color: #FFFFFF !important;
+        background-color: transparent !important;
     }
 
     [data-testid="stChatInput"] textarea::placeholder {
-        color: #A0AEC0 !important;
-        -webkit-text-fill-color: #A0AEC0 !important;
+        color: #B7E4C7 !important;
+        -webkit-text-fill-color: #B7E4C7 !important;
     }
 
     /* --- BARRA LATERAL --- */
