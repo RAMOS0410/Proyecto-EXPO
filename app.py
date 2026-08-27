@@ -176,10 +176,12 @@ st.markdown("""
         box-shadow: 0 4px 16px rgba(45, 106, 79, 0.06) !important;
     }
 
-    /* BOTONES PRINCIPALES */
-    div.stButton > button {
+    /* BOTONES PRINCIPALES CORREGIDOS */
+    div.stButton > button,
+    div.stButton > button * {
         background-color: var(--primary-btn) !important;
         color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
         border-radius: 12px !important;
         border: none !important;
         font-family: 'Poppins', sans-serif !important;
@@ -189,8 +191,11 @@ st.markdown("""
         transition: all 0.2s ease !important;
     }
 
-    div.stButton > button:hover {
+    div.stButton > button:hover,
+    div.stButton > button:hover * {
         background-color: var(--primary-btn-hover) !important;
+        color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(45, 106, 79, 0.2) !important;
     }
