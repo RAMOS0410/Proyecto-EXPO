@@ -41,7 +41,7 @@ st.markdown("""
         --primary-btn-hover: #40916C; /* Hover de botones */
     }
 
-    /* FORZAR FONDO DE APLICACIÓN EN CUALQUIER MODO */
+    /* FORZAR FONDO DE APLICACIÓN */
     html, body, [data-testid="stAppViewContainer"], .stApp {
         background-color: var(--bg-main) !important;
         color: var(--text-body) !important;
@@ -66,7 +66,7 @@ st.markdown("""
         color: #1B4332 !important;
     }
 
-    /* FORZAR VISIBILIDAD DE MENSAJES DE CHAT EN MODO OSCURO */
+    /* MENSAJES DE CHAT */
     [data-testid="stChatMessage"] {
         background-color: #FFFFFF !important;
         border: 1px solid var(--card-border) !important;
@@ -80,6 +80,25 @@ st.markdown("""
     [data-testid="stChatMessage"] span, 
     [data-testid="stChatMessage"] div {
         color: #081C15 !important;
+    }
+
+    /* FIX PARA INPUTS Y CHAT INPUT EN MODO OSCURO */
+    input[type="text"], input[type="password"] {
+        background-color: #FAF8F5 !important;
+        color: #081C15 !important;
+        border: 1.5px solid var(--card-border) !important;
+        border-radius: 10px !important;
+    }
+
+    /* ESTILO ESPECÍFICO PARA EL CUADRO DE CHAT (st.chat_input) */
+    [data-testid="stChatInput"] textarea {
+        color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+    }
+
+    [data-testid="stChatInput"] textarea::placeholder {
+        color: #A0AEC0 !important;
+        -webkit-text-fill-color: #A0AEC0 !important;
     }
 
     /* --- BARRA LATERAL --- */
@@ -185,14 +204,6 @@ st.markdown("""
 
     div[data-testid="stNotification"] * {
         color: #1B4332 !important;
-    }
-
-    /* INPUTS */
-    input[type="text"], input[type="password"] {
-        background-color: #FAF8F5 !important;
-        color: #081C15 !important;
-        border: 1.5px solid var(--card-border) !important;
-        border-radius: 10px !important;
     }
 
     /* ADAPTABILIDAD MÓVIL */
