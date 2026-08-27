@@ -23,7 +23,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ESTILOS CSS (PALETA ÚNICA DE COLOR: VERDE, CREMA Y BLANCO) ---
+# --- ESTILOS CSS (PALETA ÚNICA CON ALTO CONTRASTE EN SIDEBAR) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
@@ -52,7 +52,7 @@ st.markdown("""
         background-color: transparent !important;
     }
 
-    /* TIPOGRAFÍAS Y ENCABEZADOS */
+    /* TIPOGRAFÍAS Y ENCABEZADOS DE LA ZONA PRINCIPAL */
     .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6,
     [data-testid="stMarkdownContainer"] h1, 
     [data-testid="stMarkdownContainer"] h2, 
@@ -66,9 +66,30 @@ st.markdown("""
         color: var(--text-body) !important;
     }
 
-    /* BARRA LATERAL VERDE */
+    /* --- BARRA LATERAL (CONTRASTE Y VISIBILIDAD DE TEXTOS) --- */
     [data-testid="stSidebar"] {
         background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--sidebar-bg-2) 100%) !important;
+    }
+
+    /* Título principal "AGRO IA" en Blanco Puro */
+    [data-testid="stSidebar"] h1, 
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h1 {
+        color: #FFFFFF !important;
+        font-weight: 800 !important;
+    }
+
+    /* Textos secundarios ("Usuario activo", etc.) en Verde Crema Claro */
+    [data-testid="stSidebar"] p, 
+    [data-testid="stSidebar"] span, 
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+        color: #D8F3DC !important;
+        font-weight: 500 !important;
+    }
+
+    /* Línea divisora en la barra lateral */
+    [data-testid="stSidebar"] hr {
+        border-color: rgba(216, 243, 220, 0.3) !important;
     }
 
     /* BOTONES DE LA BARRA LATERAL (OPCIONES INACTIVAS - BLANCO SÓLIDO) */
@@ -81,6 +102,7 @@ st.markdown("""
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
     }
 
+    /* Texto dentro de las tarjetas del menú lateral */
     [data-testid="stSidebar"] div[role="radiogroup"] label p {
         color: #1B4332 !important;
         font-weight: 600 !important;
@@ -111,7 +133,7 @@ st.markdown("""
         box-shadow: 0 4px 16px rgba(45, 106, 79, 0.06) !important;
     }
 
-    /* BOTONES PRINCIPALES (EJECUTAR ANÁLISIS, INICIAR SESIÓN, ETC.) */
+    /* BOTONES PRINCIPALES */
     div.stButton > button {
         background-color: var(--primary-btn) !important;
         color: #FFFFFF !important;
@@ -130,7 +152,7 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(45, 106, 79, 0.2) !important;
     }
 
-    /* FILE UPLOADER (SUBIDA DE ARCHIVOS) */
+    /* FILE UPLOADER */
     [data-testid="stFileUploader"] {
         background-color: #FFFFFF !important;
         border: 1.5px dashed #40916C !important;
@@ -142,7 +164,7 @@ st.markdown("""
         color: #1B4332 !important;
     }
 
-    /* CUADROS DE NOTIFICACIÓN / INFORMACIÓN */
+    /* CUADROS DE NOTIFICACIÓN */
     div[data-testid="stNotification"] {
         background-color: #E8F5E9 !important;
         color: #1B4332 !important;
@@ -154,7 +176,7 @@ st.markdown("""
         color: #1B4332 !important;
     }
 
-    /* INPUTS DE TEXTO Y CONTRASEÑA */
+    /* INPUTS DE TEXTO */
     input[type="text"], input[type="password"] {
         background-color: #FAF8F5 !important;
         color: #081C15 !important;
