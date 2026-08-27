@@ -23,25 +23,25 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ESTILOS CSS (PALETA ÚNICA CON ALTO CONTRASTE EN SIDEBAR) ---
+# --- ESTILOS CSS (PALETA ÚNICA, COMPATIBLE CON MODO OSCURO Y RESPONSIVO) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
     /* PALETA ÚNICA DE COLOR */
-    :root, body, html {
+    :root {
         --bg-main: #F4F9F4;           /* Verde menta suave */
         --card-bg: #FFFFFF;           /* Blanco puro */
         --card-border: #D8F3DC;       /* Verde claro para bordes */
-        --text-title: #081C15;        /* Verde oscuro para títulos */
-        --text-body: #1B4332;         /* Verde bosque para lecturas */
+        --text-title: #081C15;        /* Verde muy oscuro para títulos */
+        --text-body: #1B4332;         /* Verde bosque oscuro */
         --sidebar-bg: #1B4332;       /* Fondo lateral arriba */
         --sidebar-bg-2: #2D6A4F;     /* Fondo lateral abajo */
         --primary-btn: #2D6A4F;       /* Botones principales */
         --primary-btn-hover: #40916C; /* Hover de botones */
     }
 
-    /* FONDO GENERAL DE LA APLICACIÓN */
+    /* FORZAR FONDO DE APLICACIÓN EN CUALQUIER MODO */
     html, body, [data-testid="stAppViewContainer"], .stApp {
         background-color: var(--bg-main) !important;
         color: var(--text-body) !important;
@@ -52,7 +52,7 @@ st.markdown("""
         background-color: transparent !important;
     }
 
-    /* TIPOGRAFÍAS Y ENCABEZADOS DE LA ZONA PRINCIPAL */
+    /* TIPOGRAFÍAS Y ENCABEZADOS */
     .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6,
     [data-testid="stMarkdownContainer"] h1, 
     [data-testid="stMarkdownContainer"] h2, 
@@ -62,23 +62,37 @@ st.markdown("""
         font-weight: 700 !important;
     }
 
-    .stApp p, .stApp span, .stApp label, [data-testid="stMarkdownContainer"] p {
-        color: var(--text-body) !important;
+    .stApp p, .stApp span, .stApp label, .stApp li, [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li {
+        color: #1B4332 !important;
     }
 
-    /* --- BARRA LATERAL (CONTRASTE Y VISIBILIDAD DE TEXTOS) --- */
+    /* FORZAR VISIBILIDAD DE MENSAJES DE CHAT EN MODO OSCURO */
+    [data-testid="stChatMessage"] {
+        background-color: #FFFFFF !important;
+        border: 1px solid var(--card-border) !important;
+        border-radius: 12px !important;
+        padding: 12px !important;
+        margin-bottom: 10px !important;
+    }
+
+    [data-testid="stChatMessage"] p, 
+    [data-testid="stChatMessage"] li, 
+    [data-testid="stChatMessage"] span, 
+    [data-testid="stChatMessage"] div {
+        color: #081C15 !important;
+    }
+
+    /* --- BARRA LATERAL --- */
     [data-testid="stSidebar"] {
         background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--sidebar-bg-2) 100%) !important;
     }
 
-    /* Título principal "AGRO IA" en Blanco Puro */
     [data-testid="stSidebar"] h1, 
     [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h1 {
         color: #FFFFFF !important;
         font-weight: 800 !important;
     }
 
-    /* Textos secundarios ("Usuario activo", etc.) en Verde Crema Claro */
     [data-testid="stSidebar"] p, 
     [data-testid="stSidebar"] span, 
     [data-testid="stSidebar"] label,
@@ -87,12 +101,11 @@ st.markdown("""
         font-weight: 500 !important;
     }
 
-    /* Línea divisora en la barra lateral */
     [data-testid="stSidebar"] hr {
         border-color: rgba(216, 243, 220, 0.3) !important;
     }
 
-    /* BOTONES DE LA BARRA LATERAL (OPCIONES INACTIVAS - BLANCO SÓLIDO) */
+    /* BOTONES NAVEGACIÓN LATERAL */
     [data-testid="stSidebar"] div[role="radiogroup"] label {
         background-color: #FFFFFF !important;
         border: 1.5px solid #D8F3DC !important;
@@ -100,15 +113,14 @@ st.markdown("""
         padding: 12px 16px !important;
         margin-bottom: 8px !important;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+        transition: all 0.2s ease !important;
     }
 
-    /* Texto dentro de las tarjetas del menú lateral */
     [data-testid="stSidebar"] div[role="radiogroup"] label p {
         color: #1B4332 !important;
         font-weight: 600 !important;
     }
 
-    /* BOTÓN SELECCIONADO EN LA BARRA LATERAL */
     [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
         background-color: #D8F3DC !important;
         border-color: #40916C !important;
@@ -119,12 +131,11 @@ st.markdown("""
         font-weight: 800 !important;
     }
 
-    /* OCULTAR CÍRCULO RADIO POR DEFECTO */
     [data-testid="stSidebar"] div[role="radiogroup"] label [data-baseweb="radio"] > div:first-child {
         display: none !important;
     }
 
-    /* TARJETAS Y CONTENEDORES INTERNOS */
+    /* TARJETAS INTERNAS */
     div[data-testid="stVerticalBlock"] > div > div[data-testid="stVerticalBlock"] {
         background-color: var(--card-bg) !important;
         border-radius: 16px !important;
@@ -164,7 +175,7 @@ st.markdown("""
         color: #1B4332 !important;
     }
 
-    /* CUADROS DE NOTIFICACIÓN */
+    /* NOTIFICACIONES */
     div[data-testid="stNotification"] {
         background-color: #E8F5E9 !important;
         color: #1B4332 !important;
@@ -176,12 +187,45 @@ st.markdown("""
         color: #1B4332 !important;
     }
 
-    /* INPUTS DE TEXTO */
+    /* INPUTS */
     input[type="text"], input[type="password"] {
         background-color: #FAF8F5 !important;
         color: #081C15 !important;
         border: 1.5px solid var(--card-border) !important;
         border-radius: 10px !important;
+    }
+
+    /* ADAPTABILIDAD MÓVIL */
+    @media screen and (max-width: 768px) {
+        .stApp {
+            padding: 10px !important;
+        }
+        
+        div[data-testid="stVerticalBlock"] > div > div[data-testid="stVerticalBlock"] {
+            padding: 16px !important;
+            border-radius: 12px !important;
+        }
+
+        [data-testid="stSidebar"] div[role="radiogroup"] label {
+            padding: 10px 12px !important;
+        }
+
+        [data-testid="stSidebar"] div[role="radiogroup"] label p {
+            font-size: 14px !important;
+        }
+
+        div.stButton > button {
+            width: 100% !important;
+            padding: 0.8rem 1rem !important;
+        }
+
+        .stApp h1, [data-testid="stMarkdownContainer"] h1 {
+            font-size: 24px !important;
+        }
+
+        .stApp h2, [data-testid="stMarkdownContainer"] h2 {
+            font-size: 20px !important;
+        }
     }
     </style>
 """, unsafe_allow_html=True)
@@ -545,20 +589,35 @@ else:
         cursor.execute("SELECT id, titulo FROM conversaciones WHERE usuario = ? ORDER BY id DESC", (st.session_state.usuario,))
         chats_existentes = cursor.fetchall()
 
-        opciones_chat = ["+ Nueva Conversación"] + [f"Chat #{c[0]}: {c[1]}" for c in chats_existentes]
-        chat_seleccionado = st.sidebar.selectbox("Historial de Consultas", opciones_chat)
+        opciones_map = {"+ Nueva Conversación": None}
+        for c in chats_existentes:
+            opciones_map[f"Chat #{c[0]}: {c[1]}"] = c[0]
 
-        if chat_seleccionado == "+ Nueva Conversación":
-            if "current_chat_id" in st.session_state:
+        lista_opciones = list(opciones_map.keys())
+
+        index_seleccionado = 0
+        if "current_chat_id" in st.session_state:
+            for idx, key in enumerate(lista_opciones):
+                if opciones_map[key] == st.session_state.current_chat_id:
+                    index_seleccionado = idx
+                    break
+
+        chat_seleccionado = st.sidebar.selectbox("Historial de Consultas", lista_opciones, index=index_seleccionado)
+        selected_id = opciones_map[chat_seleccionado]
+
+        if selected_id is None:
+            if "current_chat_id" in st.session_state and "switch_trigger" not in st.session_state:
                 del st.session_state.current_chat_id
-            st.session_state.messages = []
+                st.session_state.messages = []
         else:
-            chat_id = int(chat_seleccionado.split(":")[0].replace("Chat #", ""))
-            if st.session_state.get("current_chat_id") != chat_id:
-                st.session_state.current_chat_id = chat_id
-                cursor.execute("SELECT rol, contenido FROM mensajes WHERE conversacion_id = ? ORDER BY id ASC", (chat_id,))
+            if st.session_state.get("current_chat_id") != selected_id:
+                st.session_state.current_chat_id = selected_id
+                cursor.execute("SELECT rol, contenido FROM mensajes WHERE conversacion_id = ? ORDER BY id ASC", (selected_id,))
                 mensajes_db = cursor.fetchall()
                 st.session_state.messages = [{"role": m[0], "content": m[1]} for m in mensajes_db]
+
+        if "switch_trigger" in st.session_state:
+            del st.session_state.switch_trigger
 
         for msg in st.session_state.messages:
             with st.chat_message(msg["role"]):
@@ -571,6 +630,7 @@ else:
                 conn.commit()
                 st.session_state.current_chat_id = cursor.lastrowid
 
+            st.session_state.switch_trigger = True
             st.session_state.messages.append({"role": "user", "content": prompt})
             cursor.execute("INSERT INTO mensajes (conversacion_id, rol, contenido) VALUES (?, ?, ?)",
                            (st.session_state.current_chat_id, "user", prompt))
