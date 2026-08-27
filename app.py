@@ -24,39 +24,49 @@ st.set_page_config(
 
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
     }
 
+    h1, h2, h3, h4, .login-title, [data-testid="stSidebar"] div[role="radiogroup"] label {
+        font-family: 'Poppins', sans-serif !important;
+    }
+
     :root {
-        --bg-main: #f1f5f9;
+        --bg-main: #f6f9ec;
         --card-bg: #ffffff;
-        --card-border: #e2e8f0;
-        --text-title: #0f172a;
-        --text-body: #334155;
-        --sidebar-bg: #14532d;
-        --sidebar-bg-2: #0f172a;
-        --sidebar-text: #f8fafc;
-        --primary-btn: #16a34a;
-        --primary-btn-hover: #15803d;
-        --accent: #22c55e;
+        --card-border: #dde8bf;
+        --text-title: #1c3502;
+        --text-body: #3f5720;
+        --sidebar-bg: #255000;
+        --sidebar-bg-2: #588100;
+        --sidebar-text: #f5fbe3;
+        --primary-btn: #588100;
+        --primary-btn-hover: #255000;
+        --accent: #8db600;
+        --accent-2: #c6da52;
+        --accent-3: #ffff8b;
+        --shadow-tint: 88, 129, 1;
     }
 
     @media (prefers-color-scheme: dark) {
         :root {
-            --bg-main: #0f172a;
-            --card-bg: #1e293b;
-            --card-border: #334155;
-            --text-title: #f8fafc;
-            --text-body: #cbd5e1;
-            --sidebar-bg: #0f172a;
-            --sidebar-bg-2: #14532d;
-            --sidebar-text: #f8fafc;
-            --primary-btn: #16a34a;
-            --primary-btn-hover: #22c55e;
-            --accent: #22c55e;
+            --bg-main: #101b06;
+            --card-bg: #17250b;
+            --card-border: #2d4013;
+            --text-title: #eef7d6;
+            --text-body: #c8dba1;
+            --sidebar-bg: #0c1604;
+            --sidebar-bg-2: #255000;
+            --sidebar-text: #f5fbe3;
+            --primary-btn: #8db600;
+            --primary-btn-hover: #c6da52;
+            --accent: #c6da52;
+            --accent-2: #ffff8b;
+            --accent-3: #ffff8b;
+            --shadow-tint: 141, 182, 0;
         }
     }
 
@@ -110,23 +120,25 @@ st.markdown("""
     div.stButton > button {
         background: linear-gradient(135deg, var(--primary-btn), var(--primary-btn-hover)) !important;
         color: #ffffff !important;
-        border-radius: 10px !important;
+        border-radius: 14px !important;
         border: none !important;
+        font-family: 'Poppins', sans-serif !important;
         font-weight: 700 !important;
-        padding: 0.75rem 1.4rem !important;
-        font-size: 15px !important;
-        transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease !important;
-        box-shadow: 0 4px 14px rgba(22, 163, 74, 0.3);
+        padding: 1rem 1.8rem !important;
+        font-size: 16px !important;
+        letter-spacing: 0.01em;
+        transition: transform 0.2s cubic-bezier(.34,1.56,.64,1), box-shadow 0.2s ease, filter 0.2s ease !important;
+        box-shadow: 0 4px 14px rgba(var(--shadow-tint), 0.35);
     }
 
     div.stButton > button:hover {
-        transform: translateY(-2px) scale(1.015);
-        filter: brightness(1.05);
-        box-shadow: 0 8px 20px rgba(22, 163, 74, 0.4);
+        transform: translateY(-3px) scale(1.03);
+        filter: brightness(1.08);
+        box-shadow: 0 10px 24px rgba(var(--shadow-tint), 0.45);
     }
 
     div.stButton > button:active {
-        transform: translateY(0) scale(0.98);
+        transform: translateY(0) scale(0.97);
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] {
@@ -139,25 +151,33 @@ st.markdown("""
         display: flex;
         align-items: center;
         width: 100%;
-        padding: 16px 18px !important;
-        border-radius: 12px !important;
-        background-color: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        transition: all 0.25s ease;
+        padding: 20px 22px !important;
+        border-radius: 14px !important;
+        background-color: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.28s cubic-bezier(.34,1.56,.64,1);
         cursor: pointer;
-        font-size: 16px !important;
+        font-size: 17px !important;
         font-weight: 600 !important;
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label:hover {
-        background-color: rgba(255, 255, 255, 0.16);
-        transform: translateX(5px);
+        background-color: rgba(255, 255, 255, 0.18);
+        transform: translateX(6px) scale(1.02);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
-        background: linear-gradient(135deg, var(--primary-btn), var(--primary-btn-hover));
+        background: linear-gradient(135deg, var(--accent-3), var(--accent-2)) !important;
+        color: var(--sidebar-bg) !important;
         border-color: transparent;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+        transform: scale(1.03);
+    }
+
+    [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p {
+        color: var(--sidebar-bg) !important;
+        font-weight: 800 !important;
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label div:first-child {
@@ -279,10 +299,11 @@ def try_restore_from_local_storage():
     try {
         const token = localStorage.getItem('agroia_token');
         if (token) {
-            const url = new URL(window.location.href);
+            const topWindow = window.top;
+            const url = new URL(topWindow.location.href);
             if (url.searchParams.get('session_token') !== token) {
                 url.searchParams.set('session_token', token);
-                window.location.replace(url.toString());
+                topWindow.location.replace(url.toString());
             }
         }
     } catch (e) {}
@@ -485,11 +506,12 @@ else:
     st.sidebar.caption(f"Usuario: {st.session_state.usuario}")
     st.sidebar.write("---")
 
-    opcion = st.sidebar.radio(
+    opcion_mostrada = st.sidebar.radio(
         "Navegación",
-        ["Inicio e Historial", "Detectar Plaga", "Asistente Virtual", "Mi Cuenta"],
+        ["🏠  Inicio e Historial", "🐛  Detectar Plaga", "🤖  Asistente Virtual", "👤  Mi Cuenta"],
         label_visibility="collapsed"
     )
+    opcion = opcion_mostrada.split("  ", 1)[1]
 
     if opcion == "Inicio e Historial":
         st.title(f"Bienvenido, {st.session_state.nombre_completo}")
