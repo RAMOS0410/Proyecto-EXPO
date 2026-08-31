@@ -1,7 +1,6 @@
 import hashlib
 import os
 import io
-import json
 import base64
 import sqlite3
 import secrets
@@ -10,7 +9,6 @@ from PIL import Image
 from openai import OpenAI
 import streamlit as st
 import streamlit.components.v1 as components
-import docx
 
 # --- CONFIGURACIÓN E ICONO ---
 try:
@@ -25,23 +23,25 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ESTILOS CSS (DISEÑO PROFESIONAL & RESPONSIVO) ---
+# --- ESTILOS CSS (PALETA ÚNICA, COMPATIBLE CON MODO OSCURO Y RESPONSIVO) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
+    /* PALETA ÚNICA DE COLOR */
     :root {
-        --bg-main: #F4F9F4;
-        --card-bg: #FFFFFF;
-        --card-border: #D8F3DC;
-        --text-title: #081C15;
-        --text-body: #1B4332;
-        --sidebar-bg: #1B4332;
-        --sidebar-bg-2: #2D6A4F;
-        --primary-btn: #2D6A4F;
-        --primary-btn-hover: #40916C;
+        --bg-main: #F4F9F4;           /* Verde menta suave */
+        --card-bg: #FFFFFF;           /* Blanco puro */
+        --card-border: #D8F3DC;       /* Verde claro para bordes */
+        --text-title: #081C15;        /* Verde muy oscuro para títulos */
+        --text-body: #1B4332;         /* Verde bosque oscuro */
+        --sidebar-bg: #1B4332;       /* Fondo lateral arriba */
+        --sidebar-bg-2: #2D6A4F;     /* Fondo lateral abajo */
+        --primary-btn: #2D6A4F;       /* Botones principales */
+        --primary-btn-hover: #40916C; /* Hover de botones */
     }
 
+    /* FORZAR FONDO DE APLICACIÓN */
     html, body, [data-testid="stAppViewContainer"], .stApp {
         background-color: var(--bg-main) !important;
         color: var(--text-body) !important;
@@ -52,6 +52,7 @@ st.markdown("""
         background-color: transparent !important;
     }
 
+    /* TIPOGRAFÍAS Y ENCABEZADOS */
     .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6,
     [data-testid="stMarkdownContainer"] h1, 
     [data-testid="stMarkdownContainer"] h2, 
@@ -65,6 +66,7 @@ st.markdown("""
         color: #1B4332 !important;
     }
 
+    /* MENSAJES DE CHAT */
     [data-testid="stChatMessage"] {
         background-color: #FFFFFF !important;
         border: 1px solid var(--card-border) !important;
@@ -80,6 +82,7 @@ st.markdown("""
         color: #081C15 !important;
     }
 
+    /* INPUTS DE TEXTO DE FORMULARIOS */
     input[type="text"], input[type="password"] {
         background-color: #FFFFFF !important;
         color: #081C15 !important;
@@ -87,6 +90,7 @@ st.markdown("""
         border-radius: 10px !important;
     }
 
+    /* FIX DEFINITIVO PARA CHAT INPUT */
     [data-testid="stChatInput"],
     [data-testid="stChatInput"] > div,
     [data-testid="stChatInput"] div[data-baseweb="base-input"],
@@ -110,6 +114,7 @@ st.markdown("""
         -webkit-text-fill-color: #555555 !important;
     }
 
+    /* --- BARRA LATERAL --- */
     [data-testid="stSidebar"] {
         background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--sidebar-bg-2) 100%) !important;
     }
@@ -132,6 +137,7 @@ st.markdown("""
         border-color: rgba(216, 243, 220, 0.3) !important;
     }
 
+    /* BOTONES NAVEGACIÓN LATERAL */
     [data-testid="stSidebar"] div[role="radiogroup"] label {
         background-color: #FFFFFF !important;
         border: 1.5px solid #D8F3DC !important;
@@ -161,6 +167,7 @@ st.markdown("""
         display: none !important;
     }
 
+    /* TARJETAS INTERNAS */
     div[data-testid="stVerticalBlock"] > div > div[data-testid="stVerticalBlock"] {
         background-color: var(--card-bg) !important;
         border-radius: 16px !important;
@@ -169,11 +176,9 @@ st.markdown("""
         box-shadow: 0 4px 16px rgba(45, 106, 79, 0.06) !important;
     }
 
-    /* BOTONES PRINCIPALES */
+    /* BOTONES PRINCIPALES CORREGIDOS */
     div.stButton > button,
-    div.stButton > button *,
-    div[data-testid="stDownloadButton"] > button,
-    div[data-testid="stDownloadButton"] > button * {
+    div.stButton > button * {
         background-color: var(--primary-btn) !important;
         color: #FFFFFF !important;
         -webkit-text-fill-color: #FFFFFF !important;
@@ -187,9 +192,7 @@ st.markdown("""
     }
 
     div.stButton > button:hover,
-    div.stButton > button:hover *,
-    div[data-testid="stDownloadButton"] > button:hover,
-    div[data-testid="stDownloadButton"] > button:hover * {
+    div.stButton > button:hover * {
         background-color: var(--primary-btn-hover) !important;
         color: #FFFFFF !important;
         -webkit-text-fill-color: #FFFFFF !important;
@@ -197,6 +200,7 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(45, 106, 79, 0.2) !important;
     }
 
+    /* FILE UPLOADER */
     [data-testid="stFileUploader"] {
         background-color: #FFFFFF !important;
         border: 1.5px dashed #40916C !important;
@@ -208,6 +212,7 @@ st.markdown("""
         color: #1B4332 !important;
     }
 
+    /* NOTIFICACIONES */
     div[data-testid="stNotification"] {
         background-color: #E8F5E9 !important;
         color: #1B4332 !important;
@@ -219,6 +224,7 @@ st.markdown("""
         color: #1B4332 !important;
     }
 
+    /* ADAPTABILIDAD MÓVIL */
     @media screen and (max-width: 768px) {
         .stApp {
             padding: 10px !important;
@@ -237,7 +243,7 @@ st.markdown("""
             font-size: 14px !important;
         }
 
-        div.stButton > button, div[data-testid="stDownloadButton"] > button {
+        div.stButton > button {
             width: 100% !important;
             padding: 0.8rem 1rem !important;
         }
@@ -316,7 +322,7 @@ api_key = str(raw_key).strip().strip('"').strip("'")
 client = OpenAI(api_key=api_key) if api_key else None
 
 # --- BASE DE DATOS SQLITE ---
-DB_NAME = "agroia_v3.db"
+DB_NAME = "agroia_v4.db"
 
 def init_db():
     conn = sqlite3.connect(DB_NAME)
@@ -438,22 +444,8 @@ def preparar_imagen(image_pil, max_dim=1024):
 
 def encode_image_to_base64(image_pil):
     buffered = io.BytesIO()
-    image_pil.save(buffered, format="JPEG", quality=85)
+    image_pil.save(buffered, format="JPEG", quality=85, optimize=True)
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
-
-def generar_documento_word(texto_analisis):
-    doc = docx.Document()
-    doc.add_heading("Informe de Diagnóstico Agrícola - AGRO IA", level=1)
-    
-    lineas = texto_analisis.split('\n')
-    for linea in lineas:
-        if linea.strip():
-            doc.add_paragraph(linea.strip())
-
-    buffer = io.BytesIO()
-    doc.save(buffer)
-    buffer.seek(0)
-    return buffer
 
 inject_pwa()
 
@@ -573,61 +565,39 @@ else:
             st.subheader("Resultado del Análisis")
             if imagen_file and img is not None:
                 if st.button("Ejecutar Análisis", use_container_width=True):
-                    with st.spinner("Analizando la imagen..."):
+                    with st.spinner("Analizando estado de la planta..."):
                         if client:
                             try:
                                 base64_image = encode_image_to_base64(img)
-                                
-                                # PROMPT TÉCNICO Y ROL DE SISTEMA (Evita bloqueos del filtro de OpenAI)
                                 prompt_analisis = """
-                                Como especialista en fitopatología agrícola, analiza la imagen adjunta de esta muestra foliar.
-                                Identifica la especie del cultivo y la patología o afección observada.
+                                Analiza esta imagen agrícola. Explica todo con lenguaje muy sencillo, directo y fácil de entender.
 
-                                Estructura tu respuesta únicamente así:
-                                🌱 Planta y Problema: [Identificación exacta del cultivo y la patología]
-                                ⚠️ Nivel de Gravedad: [Bajo, Medio o Alto]
-                                🛠️ Soluciones Recomendadas: [Tratamientos fitosanitarios u orgánicos específicos]
-                                🛡️ Prevención: [Buenas prácticas agrícolas y de manejo]
+                                Responde en estas 4 secciones claras:
+                                1. Planta y Problema Detectado (Especie y daño visto en palabras sencillas).
+                                2. Nivel de Gravedad (Bajo, Medio o Alto).
+                                3. Soluciones Recomendadas (Remedios caseros orgánicos y opción comercial de tienda).
+                                4. Prevención (Consejos simples para evitar que vuelva a suceder).
                                 """
 
                                 response = client.chat.completions.create(
                                     model="gpt-4o-mini",
-                                    messages=[
-                                        {
-                                            "role": "system",
-                                            "content": "Eres un asistente técnico agrícola especializado exclusivamente en agronomía, diagnóstico visual fitosanitario e identificación de plagas y patologías en plantas."
-                                        },
-                                        {
-                                            "role": "user",
-                                            "content": [
-                                                {"type": "text", "text": prompt_analisis},
-                                                {
-                                                    "type": "image_url",
-                                                    "image_url": {
-                                                        "url": f"data:image/jpeg;base64,{base64_image}"
-                                                    }
-                                                }
-                                            ]
-                                        }
-                                    ],
-                                    max_tokens=800
+                                    messages=[{
+                                        "role": "user",
+                                        "content": [
+                                            {"type": "text", "text": prompt_analisis},
+                                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+                                        ]
+                                    }],
+                                    max_tokens=1200
                                 )
 
-                                texto_resultado = response.choices[0].message.content.strip()
-                                st.session_state["ultimo_analisis_texto"] = texto_resultado
-
-                                # Extraer título limpio para la base de datos
-                                lineas = texto_resultado.split('\n')
-                                resumen_cultivo = "Diagnóstico Botánico"
-                                for l in lineas:
-                                    if "Planta y Problema" in l:
-                                        resumen_cultivo = l.replace("🌱", "").replace("Planta y Problema:", "").strip()
-                                        break
+                                resultado = response.choices[0].message.content
+                                st.markdown(resultado)
 
                                 conn = sqlite3.connect(DB_NAME)
                                 cursor = conn.cursor()
                                 cursor.execute("INSERT INTO historial (usuario, cultivo, diagnostico) VALUES (?, ?, ?)",
-                                               (st.session_state.usuario, resumen_cultivo, texto_resultado[:100] + "..."))
+                                               (st.session_state.usuario, "Auto-detectado", resultado[:100] + "..."))
                                 conn.commit()
                                 conn.close()
 
@@ -635,20 +605,7 @@ else:
                                 st.error(f"Error durante el proceso: {e}")
                         else:
                             st.error("No se ha configurado la clave API de OpenAI.")
-
-            if "ultimo_analisis_texto" in st.session_state:
-                res_texto = st.session_state["ultimo_analisis_texto"]
-                st.markdown(res_texto)
-
-                docx_buffer = generar_documento_word(res_texto)
-                st.download_button(
-                    label="📄 Descargar Informe Word (.docx)",
-                    data=docx_buffer,
-                    file_name="diagnostico_agricola.docx",
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    use_container_width=True
-                )
-            elif not imagen_file:
+            else:
                 st.info("Carga o toma una fotografía a la izquierda para desplegar aquí el reporte.")
 
     elif opcion == "Asistente Virtual":
