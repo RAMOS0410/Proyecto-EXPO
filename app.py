@@ -431,31 +431,24 @@ def cerrar_sesion_db(token):
     except Exception:
         pass
 
-def preparar_imagen(image_pil, max_dim=2048):
+def preparar_imagen(image_pil, max_dim=1024):
     imagen = image_pil.convert("RGB")
     imagen.thumbnail((max_dim, max_dim), Image.LANCZOS)
     return imagen
 
 def encode_image_to_base64(image_pil):
     buffered = io.BytesIO()
-    image_pil.save(buffered, format="JPEG", quality=95)
+    image_pil.save(buffered, format="JPEG", quality=85)
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-def generar_documento_word(datos_json):
+def generar_documento_word(texto_analisis):
     doc = docx.Document()
     doc.add_heading("Informe de Diagnóstico Agrícola - AGRO IA", level=1)
     
-    doc.add_heading("Planta y Problema:", level=2)
-    doc.add_paragraph(datos_json.get("planta_y_problema", "No especificado"))
-
-    doc.add_heading("Nivel de Gravedad:", level=2)
-    doc.add_paragraph(datos_json.get("nivel_gravedad", "No especificado"))
-
-    doc.add_heading("Soluciones Recomendadas:", level=2)
-    doc.add_paragraph(datos_json.get("soluciones_recomendadas", "No especificado"))
-
-    doc.add_heading("Prevención:", level=2)
-    doc.add_paragraph(datos_json.get("prevencion", "No especificado"))
+    lineas = texto_analisis.split('\n')
+    for linea in lineas:
+        if linea.strip():
+            doc.add_paragraph(linea.strip())
 
     buffer = io.BytesIO()
     doc.save(buffer)
@@ -585,20 +578,15 @@ else:
                             try:
                                 base64_image = encode_image_to_base64(img)
                                 
+                                # PROMPT ORIGINAL EN TEXTO LIBRE (Recupera la máxima precisión visual)
                                 prompt_analisis = """
-                                Observa detenidamente esta imagen de un cultivo agrícola.
-                                1. Identifica qué planta/hoja es (sé específico con la especie).
-                                2. Identifica la plaga, hongo o enfermedad exacta que presenta según sus síntomas visibles.
-                                3. Determina el nivel de gravedad (Bajo, Medio o Alto).
-                                4. Da soluciones recomendadas y medidas de prevención.
+                                Observa detenidamente esta imagen de un cultivo agrícola y realiza un análisis botánico exacto.
 
-                                Responde ÚNICAMENTE en este formato JSON exacto:
-                                {
-                                  "planta_y_problema": "Planta e Identificación de la enfermedad/plaga",
-                                  "nivel_gravedad": "Bajo/Medio/Alto",
-                                  "soluciones_recomendadas": "Detalle de tratamientos",
-                                  "prevencion": "Medidas de prevención"
-                                }
+                                Responde siguiendo este esquema preciso:
+                                🌱 Planta y Problema: [Especie exacta del cultivo y la enfermedad/plaga diagnosticada]
+                                ⚠️ Nivel de Gravedad: [Bajo, Medio o Alto]
+                                🛠️ Soluciones Recomendadas: [Tratamientos orgánicos y químicos específicos]
+                                🛡️ Prevención: [Medidas preventivas prácticas para el cultivo]
                                 """
 
                                 response = client.chat.completions.create(
@@ -610,8 +598,7 @@ else:
                                             {
                                                 "type": "image_url",
                                                 "image_url": {
-                                                    "url": f"data:image/jpeg;base64,{base64_image}",
-                                                    "detail": "high"
+                                                    "url": f"data:image/jpeg;base64,{base64_image}"
                                                 }
                                             }
                                         ]
@@ -619,20 +606,21 @@ else:
                                     max_tokens=800
                                 )
 
-                                raw_json = response.choices[0].message.content.strip()
-                                if raw_json.startswith("```json"):
-                                    raw_json = raw_json[7:]
-                                if raw_json.endswith("```"):
-                                    raw_json = raw_json[:-3]
-                                raw_json = raw_json.strip()
+                                texto_resultado = response.choices[0].message.content.strip()
+                                st.session_state["ultimo_analisis_texto"] = texto_resultado
 
-                                datos_json = json.loads(raw_json)
-                                st.session_state["ultimo_analisis"] = datos_json
+                                # Extraer la primera línea o título para guardar de forma limpia en la BD
+                                lineas = texto_resultado.split('\n')
+                                resumen_cultivo = "Diagnóstico Botánico"
+                                for l in lineas:
+                                    if "Planta y Problema" in l:
+                                        resumen_cultivo = l.replace("🌱", "").replace("Planta y Problema:", "").strip()
+                                        break
 
                                 conn = sqlite3.connect(DB_NAME)
                                 cursor = conn.cursor()
                                 cursor.execute("INSERT INTO historial (usuario, cultivo, diagnostico) VALUES (?, ?, ?)",
-                                               (st.session_state.usuario, datos_json.get("planta_y_problema", "Desconocido"), raw_json[:100] + "..."))
+                                               (st.session_state.usuario, resumen_cultivo, texto_resultado[:100] + "..."))
                                 conn.commit()
                                 conn.close()
 
@@ -641,14 +629,11 @@ else:
                         else:
                             st.error("No se ha configurado la clave API de OpenAI.")
 
-            if "ultimo_analisis" in st.session_state:
-                res = st.session_state["ultimo_analisis"]
-                st.markdown(f"**🌱 Planta y Problema:** {res.get('planta_y_problema')}")
-                st.markdown(f"**⚠️ Nivel de Gravedad:** {res.get('nivel_gravedad')}")
-                st.markdown(f"**🛠️ Soluciones Recomendadas:** {res.get('soluciones_recomendadas')}")
-                st.markdown(f"**🛡️ Prevención:** {res.get('prevencion')}")
+            if "ultimo_analisis_texto" in st.session_state:
+                res_texto = st.session_state["ultimo_analisis_texto"]
+                st.markdown(res_texto)
 
-                docx_buffer = generar_documento_word(res)
+                docx_buffer = generar_documento_word(res_texto)
                 st.download_button(
                     label="📄 Descargar Informe Word (.docx)",
                     data=docx_buffer,
