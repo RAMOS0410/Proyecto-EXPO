@@ -585,12 +585,19 @@ else:
                             try:
                                 base64_image = encode_image_to_base64(img)
                                 prompt_analisis = """
-                                Analiza esta imagen agrícola detenidamente y devuelve la respuesta EXCLUSIVAMENTE en formato JSON estructurado con estas claves exactas:
+                                Analiza minuciosamente la imagen botánica adjunta antes de dar el diagnóstico. 
+
+                                Pasos de análisis visual obligatorio:
+                                1. Inspecciona la morfología foliar (forma de la hoja, bordes, venación, si es trifoliada o simple).
+                                2. Observa las lesiones (pústulas, manchas, textura, color).
+                                3. Determina con precisión la especie botánica y la patología visualizada.
+
+                                Devuelve la respuesta EXCLUSIVAMENTE en formato JSON estructurado con estas claves exactas:
                                 {
-                                  "planta_y_problema": "Sé muy específico. Identifica el nombre común y científico de la planta, seguido de la plaga o enfermedad exacta que presenta (por ejemplo: 'Hoja de Fríjol con Roya (Puccinia phaseoli)')",
+                                  "planta_y_problema": "Identifica de forma precisa la especie (ej: Hoja de Frijol) y la plaga o hongo exacto (ej: Roya del frijol / Uromyces appendiculatus)",
                                   "nivel_gravedad": "Bajo, Medio o Alto",
-                                  "soluciones_recomendadas": "Remedios caseros o tratamientos orgánicos y opciones de fungicidas/insecticidas específicos para esa patología",
-                                  "prevencion": "Medidas de manejo agronómico para prevenir el hongo o plaga identificado"
+                                  "soluciones_recomendadas": "Tratamientos orgánicos y fungicidas o productos específicos para esta afección",
+                                  "prevencion": "Medidas de manejo agrícola preventivas para este cultivo específico"
                                 }
                                 No agregues etiquetas markdown alrededor del JSON ni texto adicional.
                                 """
