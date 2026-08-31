@@ -25,7 +25,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ESTILOS CSS ---
+# --- ESTILOS CSS (DISEÑO PROFESIONAL & RESPONSIVO) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
@@ -578,38 +578,45 @@ else:
                             try:
                                 base64_image = encode_image_to_base64(img)
                                 
-                                # PROMPT ORIGINAL EN TEXTO LIBRE (Recupera la máxima precisión visual)
+                                # PROMPT TÉCNICO Y ROL DE SISTEMA (Evita bloqueos del filtro de OpenAI)
                                 prompt_analisis = """
-                                Observa detenidamente esta imagen de un cultivo agrícola y realiza un análisis botánico exacto.
+                                Como especialista en fitopatología agrícola, analiza la imagen adjunta de esta muestra foliar.
+                                Identifica la especie del cultivo y la patología o afección observada.
 
-                                Responde siguiendo este esquema preciso:
-                                🌱 Planta y Problema: [Especie exacta del cultivo y la enfermedad/plaga diagnosticada]
+                                Estructura tu respuesta únicamente así:
+                                🌱 Planta y Problema: [Identificación exacta del cultivo y la patología]
                                 ⚠️ Nivel de Gravedad: [Bajo, Medio o Alto]
-                                🛠️ Soluciones Recomendadas: [Tratamientos orgánicos y químicos específicos]
-                                🛡️ Prevención: [Medidas preventivas prácticas para el cultivo]
+                                🛠️ Soluciones Recomendadas: [Tratamientos fitosanitarios u orgánicos específicos]
+                                🛡️ Prevención: [Buenas prácticas agrícolas y de manejo]
                                 """
 
                                 response = client.chat.completions.create(
                                     model="gpt-4o-mini",
-                                    messages=[{
-                                        "role": "user",
-                                        "content": [
-                                            {"type": "text", "text": prompt_analisis},
-                                            {
-                                                "type": "image_url",
-                                                "image_url": {
-                                                    "url": f"data:image/jpeg;base64,{base64_image}"
+                                    messages=[
+                                        {
+                                            "role": "system",
+                                            "content": "Eres un asistente técnico agrícola especializado exclusivamente en agronomía, diagnóstico visual fitosanitario e identificación de plagas y patologías en plantas."
+                                        },
+                                        {
+                                            "role": "user",
+                                            "content": [
+                                                {"type": "text", "text": prompt_analisis},
+                                                {
+                                                    "type": "image_url",
+                                                    "image_url": {
+                                                        "url": f"data:image/jpeg;base64,{base64_image}"
+                                                    }
                                                 }
-                                            }
-                                        ]
-                                    }],
+                                            ]
+                                        }
+                                    ],
                                     max_tokens=800
                                 )
 
                                 texto_resultado = response.choices[0].message.content.strip()
                                 st.session_state["ultimo_analisis_texto"] = texto_resultado
 
-                                # Extraer la primera línea o título para guardar de forma limpia en la BD
+                                # Extraer título limpio para la base de datos
                                 lineas = texto_resultado.split('\n')
                                 resumen_cultivo = "Diagnóstico Botánico"
                                 for l in lineas:
