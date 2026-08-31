@@ -10,6 +10,7 @@ from PIL import Image
 from openai import OpenAI
 import streamlit as st
 import streamlit.components.v1 as components
+import docx
 
 # --- CONFIGURACIÓN E ICONO ---
 try:
@@ -315,7 +316,6 @@ api_key = str(raw_key).strip().strip('"').strip("'")
 client = OpenAI(api_key=api_key) if api_key else None
 
 # --- BASE DE DATOS SQLITE ---
-# Usamos agroia_v3.db que es donde existen tus usuarios anteriores
 DB_NAME = "agroia_v3.db"
 
 def init_db():
@@ -441,6 +441,27 @@ def encode_image_to_base64(image_pil):
     image_pil.save(buffered, format="JPEG", quality=85, optimize=True)
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
+def generar_documento_word(datos_json):
+    doc = docx.Document()
+    doc.add_heading("Informe de Diagnóstico Agrícola - AGRO IA", level=1)
+    
+    doc.add_heading("Planta y Problema:", level=2)
+    doc.add_paragraph(datos_json.get("planta_y_problema", "No especificado"))
+
+    doc.add_heading("Nivel de Gravedad:", level=2)
+    doc.add_paragraph(datos_json.get("nivel_gravedad", "No especificado"))
+
+    doc.add_heading("Soluciones Recomendadas:", level=2)
+    doc.add_paragraph(datos_json.get("soluciones_recomendadas", "No especificado"))
+
+    doc.add_heading("Prevención:", level=2)
+    doc.add_paragraph(datos_json.get("prevencion", "No especificado"))
+
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    return buffer
+
 inject_pwa()
 
 params = st.query_params
@@ -564,12 +585,12 @@ else:
                             try:
                                 base64_image = encode_image_to_base64(img)
                                 prompt_analisis = """
-                                Analiza esta imagen agrícola y devuelve la respuesta EXCLUSIVAMENTE en formato JSON estructurado con estas claves exactas:
+                                Analiza esta imagen agrícola detenidamente y devuelve la respuesta EXCLUSIVAMENTE en formato JSON estructurado con estas claves exactas:
                                 {
-                                  "planta_y_problema": "Nombre de la planta y problema o daño visualizado",
+                                  "planta_y_problema": "Sé muy específico. Identifica el nombre común y científico de la planta, seguido de la plaga o enfermedad exacta que presenta (por ejemplo: 'Hoja de Fríjol con Roya (Puccinia phaseoli)')",
                                   "nivel_gravedad": "Bajo, Medio o Alto",
-                                  "soluciones_recomendadas": "Remedios caseros u orgánicos y opciones comerciales",
-                                  "prevencion": "Consejos para evitar que ocurra nuevamente"
+                                  "soluciones_recomendadas": "Remedios caseros o tratamientos orgánicos y opciones de fungicidas/insecticidas específicos para esa patología",
+                                  "prevencion": "Medidas de manejo agronómico para prevenir el hongo o plaga identificado"
                                 }
                                 No agregues etiquetas markdown alrededor del JSON ni texto adicional.
                                 """
@@ -595,7 +616,6 @@ else:
 
                                 datos_json = json.loads(raw_json)
                                 st.session_state["ultimo_analisis"] = datos_json
-                                st.session_state["raw_json_str"] = json.dumps(datos_json, indent=4, ensure_ascii=False)
 
                                 conn = sqlite3.connect(DB_NAME)
                                 cursor = conn.cursor()
@@ -616,11 +636,12 @@ else:
                 st.markdown(f"**🛠️ Soluciones Recomendadas:** {res.get('soluciones_recomendadas')}")
                 st.markdown(f"**🛡️ Prevención:** {res.get('prevencion')}")
 
+                docx_buffer = generar_documento_word(res)
                 st.download_button(
-                    label="Descargar Informe JSON",
-                    data=st.session_state["raw_json_str"],
-                    file_name="diagnostico_agricola.json",
-                    mime="application/json",
+                    label="📄 Descargar Informe Word (.docx)",
+                    data=docx_buffer,
+                    file_name="diagnostico_agricola.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                     use_container_width=True
                 )
             elif not imagen_file:
