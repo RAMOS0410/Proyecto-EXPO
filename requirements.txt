@@ -1,5 +1,5 @@
 streamlit
 openai
-pillow
 pandas
-extra-streamlit-components
+pillow
+python-docx
