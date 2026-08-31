@@ -431,14 +431,14 @@ def cerrar_sesion_db(token):
     except Exception:
         pass
 
-def preparar_imagen(image_pil, max_dim=1024):
+def preparar_imagen(image_pil, max_dim=2048):
     imagen = image_pil.convert("RGB")
     imagen.thumbnail((max_dim, max_dim), Image.LANCZOS)
     return imagen
 
 def encode_image_to_base64(image_pil):
     buffered = io.BytesIO()
-    image_pil.save(buffered, format="JPEG", quality=85, optimize=True)
+    image_pil.save(buffered, format="JPEG", quality=95)
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
 def generar_documento_word(datos_json):
@@ -580,26 +580,25 @@ else:
             st.subheader("Resultado del Análisis")
             if imagen_file and img is not None:
                 if st.button("Ejecutar Análisis", use_container_width=True):
-                    with st.spinner("Analizando estado de la planta..."):
+                    with st.spinner("Analizando la imagen..."):
                         if client:
                             try:
                                 base64_image = encode_image_to_base64(img)
+                                
                                 prompt_analisis = """
-                                Analiza minuciosamente la imagen botánica adjunta antes de dar el diagnóstico. 
+                                Observa detenidamente esta imagen de un cultivo agrícola.
+                                1. Identifica qué planta/hoja es (sé específico con la especie).
+                                2. Identifica la plaga, hongo o enfermedad exacta que presenta según sus síntomas visibles.
+                                3. Determina el nivel de gravedad (Bajo, Medio o Alto).
+                                4. Da soluciones recomendadas y medidas de prevención.
 
-                                Pasos de análisis visual obligatorio:
-                                1. Inspecciona la morfología foliar (forma de la hoja, bordes, venación, si es trifoliada o simple).
-                                2. Observa las lesiones (pústulas, manchas, textura, color).
-                                3. Determina con precisión la especie botánica y la patología visualizada.
-
-                                Devuelve la respuesta EXCLUSIVAMENTE en formato JSON estructurado con estas claves exactas:
+                                Responde ÚNICAMENTE en este formato JSON exacto:
                                 {
-                                  "planta_y_problema": "Identifica de forma precisa la especie (ej: Hoja de Frijol) y la plaga o hongo exacto (ej: Roya del frijol / Uromyces appendiculatus)",
-                                  "nivel_gravedad": "Bajo, Medio o Alto",
-                                  "soluciones_recomendadas": "Tratamientos orgánicos y fungicidas o productos específicos para esta afección",
-                                  "prevencion": "Medidas de manejo agrícola preventivas para este cultivo específico"
+                                  "planta_y_problema": "Planta e Identificación de la enfermedad/plaga",
+                                  "nivel_gravedad": "Bajo/Medio/Alto",
+                                  "soluciones_recomendadas": "Detalle de tratamientos",
+                                  "prevencion": "Medidas de prevención"
                                 }
-                                No agregues etiquetas markdown alrededor del JSON ni texto adicional.
                                 """
 
                                 response = client.chat.completions.create(
@@ -608,10 +607,16 @@ else:
                                         "role": "user",
                                         "content": [
                                             {"type": "text", "text": prompt_analisis},
-                                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+                                            {
+                                                "type": "image_url",
+                                                "image_url": {
+                                                    "url": f"data:image/jpeg;base64,{base64_image}",
+                                                    "detail": "high"
+                                                }
+                                            }
                                         ]
                                     }],
-                                    max_tokens=1200
+                                    max_tokens=800
                                 )
 
                                 raw_json = response.choices[0].message.content.strip()
