@@ -1,6 +1,7 @@
 import hashlib
 import os
 import io
+import json
 import base64
 import sqlite3
 import secrets
@@ -23,25 +24,23 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ESTILOS CSS (PALETA ÚNICA, COMPATIBLE CON MODO OSCURO Y RESPONSIVO) ---
+# --- ESTILOS CSS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
-    /* PALETA ÚNICA DE COLOR */
     :root {
-        --bg-main: #F4F9F4;           /* Verde menta suave */
-        --card-bg: #FFFFFF;           /* Blanco puro */
-        --card-border: #D8F3DC;       /* Verde claro para bordes */
-        --text-title: #081C15;        /* Verde muy oscuro para títulos */
-        --text-body: #1B4332;         /* Verde bosque oscuro */
-        --sidebar-bg: #1B4332;       /* Fondo lateral arriba */
-        --sidebar-bg-2: #2D6A4F;     /* Fondo lateral abajo */
-        --primary-btn: #2D6A4F;       /* Botones principales */
-        --primary-btn-hover: #40916C; /* Hover de botones */
+        --bg-main: #F4F9F4;
+        --card-bg: #FFFFFF;
+        --card-border: #D8F3DC;
+        --text-title: #081C15;
+        --text-body: #1B4332;
+        --sidebar-bg: #1B4332;
+        --sidebar-bg-2: #2D6A4F;
+        --primary-btn: #2D6A4F;
+        --primary-btn-hover: #40916C;
     }
 
-    /* FORZAR FONDO DE APLICACIÓN */
     html, body, [data-testid="stAppViewContainer"], .stApp {
         background-color: var(--bg-main) !important;
         color: var(--text-body) !important;
@@ -52,7 +51,6 @@ st.markdown("""
         background-color: transparent !important;
     }
 
-    /* TIPOGRAFÍAS Y ENCABEZADOS */
     .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6,
     [data-testid="stMarkdownContainer"] h1, 
     [data-testid="stMarkdownContainer"] h2, 
@@ -66,7 +64,6 @@ st.markdown("""
         color: #1B4332 !important;
     }
 
-    /* MENSAJES DE CHAT */
     [data-testid="stChatMessage"] {
         background-color: #FFFFFF !important;
         border: 1px solid var(--card-border) !important;
@@ -82,7 +79,6 @@ st.markdown("""
         color: #081C15 !important;
     }
 
-    /* INPUTS DE TEXTO DE FORMULARIOS */
     input[type="text"], input[type="password"] {
         background-color: #FFFFFF !important;
         color: #081C15 !important;
@@ -90,7 +86,6 @@ st.markdown("""
         border-radius: 10px !important;
     }
 
-    /* FIX DEFINITIVO PARA CHAT INPUT */
     [data-testid="stChatInput"],
     [data-testid="stChatInput"] > div,
     [data-testid="stChatInput"] div[data-baseweb="base-input"],
@@ -114,7 +109,6 @@ st.markdown("""
         -webkit-text-fill-color: #555555 !important;
     }
 
-    /* --- BARRA LATERAL --- */
     [data-testid="stSidebar"] {
         background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--sidebar-bg-2) 100%) !important;
     }
@@ -137,7 +131,6 @@ st.markdown("""
         border-color: rgba(216, 243, 220, 0.3) !important;
     }
 
-    /* BOTONES NAVEGACIÓN LATERAL */
     [data-testid="stSidebar"] div[role="radiogroup"] label {
         background-color: #FFFFFF !important;
         border: 1.5px solid #D8F3DC !important;
@@ -167,7 +160,6 @@ st.markdown("""
         display: none !important;
     }
 
-    /* TARJETAS INTERNAS */
     div[data-testid="stVerticalBlock"] > div > div[data-testid="stVerticalBlock"] {
         background-color: var(--card-bg) !important;
         border-radius: 16px !important;
@@ -176,9 +168,11 @@ st.markdown("""
         box-shadow: 0 4px 16px rgba(45, 106, 79, 0.06) !important;
     }
 
-    /* BOTONES PRINCIPALES CORREGIDOS */
+    /* BOTONES PRINCIPALES */
     div.stButton > button,
-    div.stButton > button * {
+    div.stButton > button *,
+    div[data-testid="stDownloadButton"] > button,
+    div[data-testid="stDownloadButton"] > button * {
         background-color: var(--primary-btn) !important;
         color: #FFFFFF !important;
         -webkit-text-fill-color: #FFFFFF !important;
@@ -192,7 +186,9 @@ st.markdown("""
     }
 
     div.stButton > button:hover,
-    div.stButton > button:hover * {
+    div.stButton > button:hover *,
+    div[data-testid="stDownloadButton"] > button:hover,
+    div[data-testid="stDownloadButton"] > button:hover * {
         background-color: var(--primary-btn-hover) !important;
         color: #FFFFFF !important;
         -webkit-text-fill-color: #FFFFFF !important;
@@ -200,7 +196,6 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(45, 106, 79, 0.2) !important;
     }
 
-    /* FILE UPLOADER */
     [data-testid="stFileUploader"] {
         background-color: #FFFFFF !important;
         border: 1.5px dashed #40916C !important;
@@ -212,7 +207,6 @@ st.markdown("""
         color: #1B4332 !important;
     }
 
-    /* NOTIFICACIONES */
     div[data-testid="stNotification"] {
         background-color: #E8F5E9 !important;
         color: #1B4332 !important;
@@ -224,7 +218,6 @@ st.markdown("""
         color: #1B4332 !important;
     }
 
-    /* ADAPTABILIDAD MÓVIL */
     @media screen and (max-width: 768px) {
         .stApp {
             padding: 10px !important;
@@ -243,7 +236,7 @@ st.markdown("""
             font-size: 14px !important;
         }
 
-        div.stButton > button {
+        div.stButton > button, div[data-testid="stDownloadButton"] > button {
             width: 100% !important;
             padding: 0.8rem 1rem !important;
         }
@@ -570,13 +563,14 @@ else:
                             try:
                                 base64_image = encode_image_to_base64(img)
                                 prompt_analisis = """
-                                Analiza esta imagen agrícola. Explica todo con lenguaje muy sencillo, directo y fácil de entender.
-
-                                Responde en estas 4 secciones claras:
-                                1. Planta y Problema Detectado (Especie y daño visto en palabras sencillas).
-                                2. Nivel de Gravedad (Bajo, Medio o Alto).
-                                3. Soluciones Recomendadas (Remedios caseros orgánicos y opción comercial de tienda).
-                                4. Prevención (Consejos simples para evitar que vuelva a suceder).
+                                Analiza esta imagen agrícola y devuelve la respuesta EXCLUSIVAMENTE en formato JSON estructurado con estas claves exactas:
+                                {
+                                  "planta_y_problema": "Nombre de la planta y problema o daño visualizado",
+                                  "nivel_gravedad": "Bajo, Medio o Alto",
+                                  "soluciones_recomendadas": "Remedios caseros u orgánicos y opciones comerciales",
+                                  "prevencion": "Consejos para evitar que ocurra nuevamente"
+                                }
+                                No agregues etiquetas markdown alrededor del JSON ni texto adicional.
                                 """
 
                                 response = client.chat.completions.create(
@@ -591,13 +585,21 @@ else:
                                     max_tokens=1200
                                 )
 
-                                resultado = response.choices[0].message.content
-                                st.markdown(resultado)
+                                raw_json = response.choices[0].message.content.strip()
+                                # Limpiar posibles delimitadores de formato markdown
+                                if raw_json.startswith("```json"):
+                                    raw_json = raw_json[7:]
+                                if raw_json.endswith("```"):
+                                    raw_json = raw_json[:-3]
+                                raw_json = raw_json.strip()
+
+                                datos_json = json.loads(raw_json)
+                                st.session_state.ultimo_analisis = datos_json
 
                                 conn = sqlite3.connect(DB_NAME)
                                 cursor = conn.cursor()
                                 cursor.execute("INSERT INTO historial (usuario, cultivo, diagnostico) VALUES (?, ?, ?)",
-                                               (st.session_state.usuario, "Auto-detectado", resultado[:100] + "..."))
+                                               (st.session_state.usuario, datos_json.get("planta_y_problema", "Desconocido"), raw_json[:100] + "..."))
                                 conn.commit()
                                 conn.close()
 
@@ -605,6 +607,22 @@ else:
                                 st.error(f"Error durante el proceso: {e}")
                         else:
                             st.error("No se ha configurado la clave API de OpenAI.")
+
+                if "ultimo_analisis" in st.session_state:
+                    res = st.session_state.ultimo_analisis
+                    st.markdown(f"**🌱 Planta y Problema:** {res.get('planta_y_problema')}")
+                    st.markdown(f"**⚠️ Nivel de Gravedad:** {res.get('nivel_gravedad')}")
+                    st.markdown(f"**🛠️ Soluciones Recomendadas:** {res.get('soluciones_recomendadas')}")
+                    st.markdown(f"**🛡️ Prevención:** {res.get('prevencion')}")
+
+                    json_str = json.dumps(res, indent=4, ensure_ascii=False)
+                    st.download_button(
+                        label="Descargar Informe JSON",
+                        data=json_str,
+                        file_name="diagnostico_agricola.json",
+                        mime="application/json",
+                        use_container_width=True
+                    )
             else:
                 st.info("Carga o toma una fotografía a la izquierda para desplegar aquí el reporte.")
 
