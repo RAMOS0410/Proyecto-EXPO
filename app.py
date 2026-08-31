@@ -315,7 +315,8 @@ api_key = str(raw_key).strip().strip('"').strip("'")
 client = OpenAI(api_key=api_key) if api_key else None
 
 # --- BASE DE DATOS SQLITE ---
-DB_NAME = "agroia_v4.db"
+# Usamos agroia_v3.db que es donde existen tus usuarios anteriores
+DB_NAME = "agroia_v3.db"
 
 def init_db():
     conn = sqlite3.connect(DB_NAME)
@@ -586,7 +587,6 @@ else:
                                 )
 
                                 raw_json = response.choices[0].message.content.strip()
-                                # Limpiar posibles delimitadores de formato markdown
                                 if raw_json.startswith("```json"):
                                     raw_json = raw_json[7:]
                                 if raw_json.endswith("```"):
@@ -594,7 +594,8 @@ else:
                                 raw_json = raw_json.strip()
 
                                 datos_json = json.loads(raw_json)
-                                st.session_state.ultimo_analisis = datos_json
+                                st.session_state["ultimo_analisis"] = datos_json
+                                st.session_state["raw_json_str"] = json.dumps(datos_json, indent=4, ensure_ascii=False)
 
                                 conn = sqlite3.connect(DB_NAME)
                                 cursor = conn.cursor()
@@ -608,22 +609,21 @@ else:
                         else:
                             st.error("No se ha configurado la clave API de OpenAI.")
 
-                if "ultimo_analisis" in st.session_state:
-                    res = st.session_state.ultimo_analisis
-                    st.markdown(f"**🌱 Planta y Problema:** {res.get('planta_y_problema')}")
-                    st.markdown(f"**⚠️ Nivel de Gravedad:** {res.get('nivel_gravedad')}")
-                    st.markdown(f"**🛠️ Soluciones Recomendadas:** {res.get('soluciones_recomendadas')}")
-                    st.markdown(f"**🛡️ Prevención:** {res.get('prevencion')}")
+            if "ultimo_analisis" in st.session_state:
+                res = st.session_state["ultimo_analisis"]
+                st.markdown(f"**🌱 Planta y Problema:** {res.get('planta_y_problema')}")
+                st.markdown(f"**⚠️ Nivel de Gravedad:** {res.get('nivel_gravedad')}")
+                st.markdown(f"**🛠️ Soluciones Recomendadas:** {res.get('soluciones_recomendadas')}")
+                st.markdown(f"**🛡️ Prevención:** {res.get('prevencion')}")
 
-                    json_str = json.dumps(res, indent=4, ensure_ascii=False)
-                    st.download_button(
-                        label="Descargar Informe JSON",
-                        data=json_str,
-                        file_name="diagnostico_agricola.json",
-                        mime="application/json",
-                        use_container_width=True
-                    )
-            else:
+                st.download_button(
+                    label="Descargar Informe JSON",
+                    data=st.session_state["raw_json_str"],
+                    file_name="diagnostico_agricola.json",
+                    mime="application/json",
+                    use_container_width=True
+                )
+            elif not imagen_file:
                 st.info("Carga o toma una fotografía a la izquierda para desplegar aquí el reporte.")
 
     elif opcion == "Asistente Virtual":
