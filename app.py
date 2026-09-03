@@ -558,15 +558,17 @@ else:
                                 base64_image = encode_image_to_base64(img)
                                 
                                 prompt_analisis = """
-                                Actúa como un experto agrónomo. Analiza la imagen adjunta de la planta u hoja.
-                                Si la imagen es pequeña o de baja resolución, haz tu mejor esfuerzo por identificar la planta y los síntomas.
+                                Actúa como un agrónomo experto en fitopatología. Analiza minuciosamente la imagen adjunta.
 
-                                Redacta tu respuesta en español claro y estructurado con el siguiente formato:
+                                Tu tarea principal es identificar con la mayor precisión posible el tipo de cultivo u hoja y la patología presente.
 
-                                🌱 **Planta y Problema Detectado:** (Especie y daño observado)
+                                Redacta tu respuesta en español usando el siguiente formato exacto:
+
+                                🌱 **Planta Identificada:** (Indica el nombre común y científico del cultivo o planta)
+                                🐛 **Problema Detectado:** (Nombre de la plaga o hongo específico con su nombre científico)
                                 ⚠️ **Nivel de Gravedad:** (Bajo, Medio o Alto)
-                                🛠️ **Soluciones Recomendadas:** (Opciones orgánicas y comerciales)
-                                🛡️ **Prevención:** (Consejos prácticos)
+                                🛠️ **Soluciones Recomendadas:** (Opciones orgánicas y productos comerciales específicos)
+                                🛡️ **Prevención:** (Consejos de manejo agrícola)
                                 """
 
                                 response = client.chat.completions.create(
