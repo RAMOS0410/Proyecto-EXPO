@@ -529,7 +529,7 @@ else:
 
     elif opcion == "Detectar Plaga":
         st.title("Nuevo Diagnóstico Agrícola")
-        st.caption("Sube una foto clara de la hoja o cultivo afectado.")
+        st.caption("Sube una foto clara de la hoja o cultivo.")
 
         col1, col2 = st.columns([1, 1])
 
@@ -552,33 +552,39 @@ else:
             st.subheader("Resultado del Análisis")
             if imagen_file and img is not None:
                 if st.button("Ejecutar Análisis", use_container_width=True):
-                    with st.spinner("Analizando estado de la planta..."):
+                    with st.spinner("Procesando muestra foliar..."):
                         if client:
                             try:
                                 base64_image = encode_image_to_base64(img)
                                 
                                 prompt_analisis = """
-                                Describe detalladamente las características botánicas de la hoja o cultivo mostrado en la imagen.
+                                Asistente de identificación botánica y agronomía.
+                                Examina la muestra foliar presente en la fotografía y genera un reporte técnico en español.
 
-                                Realiza tu descripción en español con la siguiente estructura:
-
-                                🌱 **Planta Identificada:** (Identificación de la especie vegetal)
-                                🐛 **Características Observadas:** (Manchas, tonalidades, patrones visibles en la muestra)
-                                ⚠️ **Grado de Afección:** (Leve, Moderado o Avanzado)
-                                🛠️ **Cuidado Sugerido:** (Recomendaciones de manejo agrícola)
-                                🛡️ **Prevención:** (Medidas preventivas generales)
+                                Formato requerido:
+                                🌱 **Especie Vegetal:** (Nombre común y científico)
+                                🔍 **Observaciones Foliares:** (Síntomas visuales, manchas, coloración o presencia de insectos)
+                                📊 **Estado de la Muestra:** (Normal, Leve, Moderado o Severo)
+                                💡 **Manejo Agronómico Recomendado:** (Tratamientos orgánicos o cuidados del cultivo)
+                                🛡️ **Medidas Preventivas:** (Riego, nutrición y ventilación)
                                 """
 
                                 response = client.chat.completions.create(
                                     model="gpt-4o-mini",
-                                    messages=[{
-                                        "role": "user",
-                                        "content": [
-                                            {"type": "text", "text": prompt_analisis},
-                                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}", "detail": "high"}}
-                                        ]
-                                    }],
-                                    max_tokens=1200
+                                    messages=[
+                                        {
+                                            "role": "system", 
+                                            "content": "Eres un software de visión artificial para la catalogación e identificación de plantas agrícolas y jardinería."
+                                        },
+                                        {
+                                            "role": "user",
+                                            "content": [
+                                                {"type": "text", "text": prompt_analisis},
+                                                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}", "detail": "auto"}}
+                                            ]
+                                        }
+                                    ],
+                                    max_tokens=1000
                                 )
 
                                 resultado = response.choices[0].message.content
@@ -588,20 +594,19 @@ else:
                                 conn = sqlite3.connect(DB_NAME)
                                 cursor = conn.cursor()
                                 cursor.execute("INSERT INTO historial (usuario, cultivo, diagnostico) VALUES (?, ?, ?)",
-                                               (st.session_state.usuario, "Diagnóstico IA", resultado[:120] + "..."))
+                                               (st.session_state.usuario, "Análisis Foliar", resultado[:120] + "..."))
                                 conn.commit()
                                 conn.close()
 
                             except Exception as e:
-                                st.error(f"Error durante el análisis: {e}")
+                                st.error(f"Error durante el procesamiento: {e}")
                         else:
                             st.error("No se ha configurado la clave API de OpenAI.")
 
-                # Mostrar el resultado del análisis y el chat de seguimiento
                 if "ultimo_analisis" in st.session_state:
                     st.markdown(st.session_state.ultimo_analisis)
                     st.write("---")
-                    st.subheader("💬 Continuar Investigación")
+                    st.subheader("💬 Continuar Consulta")
 
                     if "chat_plaga_historial" not in st.session_state:
                         st.session_state.chat_plaga_historial = []
@@ -610,7 +615,7 @@ else:
                         with st.chat_message(msg["role"]):
                             st.markdown(msg["content"])
 
-                    if prompt_seguimiento := st.chat_input("Haz una pregunta sobre este diagnóstico..."):
+                    if prompt_seguimiento := st.chat_input("Haz una pregunta sobre esta muestra..."):
                         st.session_state.chat_plaga_historial.append({"role": "user", "content": prompt_seguimiento})
                         with st.chat_message("user"):
                             st.markdown(prompt_seguimiento)
@@ -619,7 +624,7 @@ else:
                             if client:
                                 try:
                                     mensajes_contexto = [
-                                        {"role": "system", "content": f"Eres un asistente agrícola. El usuario tiene consultas de seguimiento sobre esta descripción botánica previa:\n{st.session_state.ultimo_analisis}"}
+                                        {"role": "system", "content": f"Eres un asistente agrónomo. Responde las dudas sobre el siguiente análisis de planta:\n{st.session_state.ultimo_analisis}"}
                                     ] + st.session_state.chat_plaga_historial
 
                                     res = client.chat.completions.create(
