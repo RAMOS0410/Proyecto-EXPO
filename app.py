@@ -558,17 +558,17 @@ else:
                                 base64_image = encode_image_to_base64(img)
                                 
                                 prompt_analisis = """
-                                Actúa como un agrónomo experto en fitopatología. Analiza minuciosamente la imagen adjunta.
+                                Eres una herramienta de visión por computadora diseñada para la identificación botánica y la asistencia en jardinería y agricultura.
 
-                                Tu tarea principal es identificar con la mayor precisión posible el tipo de cultivo u hoja y la patología presente.
+                                Analiza la imagen adjunta de la hoja o cultivo de manera estrictamente botánica.
 
-                                Redacta tu respuesta en español usando el siguiente formato exacto:
+                                Estructura tu respuesta en español con el siguiente formato exacto:
 
-                                🌱 **Planta Identificada:** (Indica el nombre común y científico del cultivo o planta)
-                                🐛 **Problema Detectado:** (Nombre de la plaga o hongo específico con su nombre científico)
-                                ⚠️ **Nivel de Gravedad:** (Bajo, Medio o Alto)
-                                🛠️ **Soluciones Recomendadas:** (Opciones orgánicas y productos comerciales específicos)
-                                🛡️ **Prevención:** (Consejos de manejo agrícola)
+                                🌱 **Planta Identificada:** (Nombre común y científico de la planta)
+                                🐛 **Diagnóstico Botánico:** (Especie de hongo, plaga o deficiencia nutricional observada)
+                                ⚠️ **Nivel de Afectación:** (Bajo, Medio o Alto)
+                                🛠️ **Tratamiento Recomendado:** (Cuidados orgánicos y productos agrícolas permitidos)
+                                🛡️ **Prevención:** (Buenas prácticas de riego y ventilación)
                                 """
 
                                 response = client.chat.completions.create(
@@ -621,7 +621,7 @@ else:
                             if client:
                                 try:
                                     mensajes_contexto = [
-                                        {"role": "system", "content": f"Eres un agrónomo experto. El usuario está haciendo preguntas de seguimiento sobre la siguiente muestra analizada previamente:\n{st.session_state.ultimo_analisis}"}
+                                        {"role": "system", "content": f"Eres un asistente agrícola de visión por computadora. El usuario tiene preguntas de seguimiento sobre este informe botánico previo:\n{st.session_state.ultimo_analisis}"}
                                     ] + st.session_state.chat_plaga_historial
 
                                     res = client.chat.completions.create(
