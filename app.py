@@ -558,17 +558,15 @@ else:
                                 base64_image = encode_image_to_base64(img)
                                 
                                 prompt_analisis = """
-                                Eres una herramienta de visión por computadora diseñada para la identificación botánica y la asistencia en jardinería y agricultura.
+                                Describe detalladamente las características botánicas de la hoja o cultivo mostrado en la imagen.
 
-                                Analiza la imagen adjunta de la hoja o cultivo de manera estrictamente botánica.
+                                Realiza tu descripción en español con la siguiente estructura:
 
-                                Estructura tu respuesta en español con el siguiente formato exacto:
-
-                                🌱 **Planta Identificada:** (Nombre común y científico de la planta)
-                                🐛 **Diagnóstico Botánico:** (Especie de hongo, plaga o deficiencia nutricional observada)
-                                ⚠️ **Nivel de Afectación:** (Bajo, Medio o Alto)
-                                🛠️ **Tratamiento Recomendado:** (Cuidados orgánicos y productos agrícolas permitidos)
-                                🛡️ **Prevención:** (Buenas prácticas de riego y ventilación)
+                                🌱 **Planta Identificada:** (Identificación de la especie vegetal)
+                                🐛 **Características Observadas:** (Manchas, tonalidades, patrones visibles en la muestra)
+                                ⚠️ **Grado de Afección:** (Leve, Moderado o Avanzado)
+                                🛠️ **Cuidado Sugerido:** (Recomendaciones de manejo agrícola)
+                                🛡️ **Prevención:** (Medidas preventivas generales)
                                 """
 
                                 response = client.chat.completions.create(
@@ -621,7 +619,7 @@ else:
                             if client:
                                 try:
                                     mensajes_contexto = [
-                                        {"role": "system", "content": f"Eres un asistente agrícola de visión por computadora. El usuario tiene preguntas de seguimiento sobre este informe botánico previo:\n{st.session_state.ultimo_analisis}"}
+                                        {"role": "system", "content": f"Eres un asistente agrícola. El usuario tiene consultas de seguimiento sobre esta descripción botánica previa:\n{st.session_state.ultimo_analisis}"}
                                     ] + st.session_state.chat_plaga_historial
 
                                     res = client.chat.completions.create(
