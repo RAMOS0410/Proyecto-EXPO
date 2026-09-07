@@ -27,7 +27,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ESTILOS CSS ---
+# --- ESTILOS CSS CON BOTONES Y TARJETAS DESTACADAS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
@@ -134,24 +134,29 @@ st.markdown("""
         border-color: rgba(216, 243, 220, 0.3) !important;
     }
 
+    /* BOTONES GRANDES DE NAVEGACIÓN EN SIDEBAR */
     [data-testid="stSidebar"] div[role="radiogroup"] label {
         background-color: #FFFFFF !important;
         border: 1.5px solid #D8F3DC !important;
         border-radius: 12px !important;
-        padding: 12px 16px !important;
-        margin-bottom: 8px !important;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+        padding: 14px 18px !important;
+        margin-bottom: 10px !important;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08) !important;
         transition: all 0.2s ease !important;
+        cursor: pointer !important;
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label p {
         color: #1B4332 !important;
-        font-weight: 600 !important;
+        font-weight: 700 !important;
+        font-size: 16px !important;
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
         background-color: #D8F3DC !important;
         border-color: #40916C !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12) !important;
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p {
@@ -163,14 +168,7 @@ st.markdown("""
         display: none !important;
     }
 
-    div[data-testid="stVerticalBlock"] > div > div[data-testid="stVerticalBlock"] {
-        background-color: var(--card-bg) !important;
-        border-radius: 16px !important;
-        padding: 24px !important;
-        border: 1.5px solid var(--card-border) !important;
-        box-shadow: 0 4px 16px rgba(45, 106, 79, 0.06) !important;
-    }
-
+    /* BOTONES DE ACCIÓN PRINCIPALES */
     div.stButton > button,
     div.stButton > button * {
         background-color: var(--primary-btn) !important;
@@ -185,9 +183,7 @@ st.markdown("""
         letter-spacing: 0.2px !important;
         min-height: 52px !important;
         box-shadow: 0 4px 14px rgba(45, 106, 79, 0.25) !important;
-        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-                    box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-                    background-color 0.2s ease !important;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease !important;
     }
 
     div.stButton > button:hover,
@@ -195,26 +191,15 @@ st.markdown("""
         background-color: var(--primary-btn-hover) !important;
         color: #FFFFFF !important;
         -webkit-text-fill-color: #FFFFFF !important;
-        transform: translateY(-3px) scale(1.02) !important;
-        box-shadow: 0 10px 22px rgba(45, 106, 79, 0.35) !important;
-    }
-
-    div.stButton > button:active,
-    div.stButton > button:active * {
-        transform: translateY(-1px) scale(0.97) !important;
-        box-shadow: 0 4px 10px rgba(45, 106, 79, 0.3) !important;
-    }
-
-    div.stButton > button:focus:not(:active) {
-        outline: 3px solid rgba(64, 145, 108, 0.35) !important;
-        outline-offset: 2px !important;
+        transform: translateY(-3px) scale(1.01) !important;
+        box-shadow: 0 8px 20px rgba(45, 106, 79, 0.35) !important;
     }
 
     [data-testid="stFileUploader"] {
         background-color: #FFFFFF !important;
         border: 1.5px dashed #40916C !important;
         border-radius: 12px !important;
-        padding: 10px !important;
+        padding: 12px !important;
     }
 
     [data-testid="stFileUploader"] * {
@@ -230,38 +215,6 @@ st.markdown("""
 
     div[data-testid="stNotification"] * {
         color: #1B4332 !important;
-    }
-
-    @media screen and (max-width: 768px) {
-        .stApp {
-            padding: 10px !important;
-        }
-        
-        div[data-testid="stVerticalBlock"] > div > div[data-testid="stVerticalBlock"] {
-            padding: 16px !important;
-            border-radius: 12px !important;
-        }
-
-        [data-testid="stSidebar"] div[role="radiogroup"] label {
-            padding: 10px 12px !important;
-        }
-
-        [data-testid="stSidebar"] div[role="radiogroup"] label p {
-            font-size: 14px !important;
-        }
-
-        div.stButton > button {
-            width: 100% !important;
-            padding: 1rem 1rem !important;
-        }
-
-        .stApp h1, [data-testid="stMarkdownContainer"] h1 {
-            font-size: 24px !important;
-        }
-
-        .stApp h2, [data-testid="stMarkdownContainer"] h2 {
-            font-size: 20px !important;
-        }
     }
     </style>
 """, unsafe_allow_html=True)
@@ -462,7 +415,6 @@ def encode_image_to_base64(image_pil):
     image_pil.save(buffered, format="JPEG", quality=85, optimize=True)
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-# --- FUNCIONES DE FIREBASE ---
 def subir_imagen_firebase(image_pil, usuario):
     buffer = io.BytesIO()
     image_pil.save(buffer, format="JPEG", quality=85, optimize=True)
@@ -525,7 +477,7 @@ if "autenticado" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# --- PANTALLA DE ACCESO ---
+# --- ACCESO ---
 if not st.session_state.autenticado:
     try_restore_from_local_storage()
 
@@ -564,7 +516,7 @@ if not st.session_state.autenticado:
                 else:
                     st.error(msj)
 
-# --- PANTALLAS INTERNAS ---
+# --- PANEL PRINCIPAL ---
 else:
     st.sidebar.title("AGRO IA 🌿")
     st.sidebar.caption(f"Usuario activo: {st.session_state.usuario}")
@@ -638,7 +590,6 @@ else:
                 img = preparar_imagen(Image.open(imagen_file))
                 st.image(img, caption="Muestra seleccionada", use_container_width=True)
             else:
-                # SI SE QUITA LA IMAGEN, LIMPIAR EL REPORTE Y EL CHAT DE SEGUIMIENTO
                 if "ultimo_analisis" in st.session_state:
                     del st.session_state["ultimo_analisis"]
                 if "chat_plaga_historial" in st.session_state:
@@ -716,6 +667,7 @@ else:
             else:
                 st.info("Carga o toma una fotografía a la izquierda para desplegar aquí el reporte.")
 
+        # SOLO MUESTRA EL CHAT DE SEGUIMIENTO SI HAY UN ANÁLISIS GENERADO
         if "ultimo_analisis" in st.session_state:
             st.write("---")
             st.subheader("💬 Chat de seguimiento sobre esta muestra")
@@ -794,3 +746,15 @@ else:
                     break
 
         chat_seleccionado = st.sidebar.selectbox("Historial de Consultas Generales", lista_opciones, index=index_seleccionado)
+
+    elif opcion == "Mi Cuenta":
+        st.title("👤 Mi Cuenta")
+        st.write(f"**Usuario:** {st.session_state.usuario}")
+        st.write(f"**Nombre Completo:** {st.session_state.nombre_completo}")
+
+        if st.button("Cerrar Sesión", use_container_width=True):
+            cerrar_sesion_db(st.session_state.get("token"))
+            clear_local_storage_token()
+            st.session_state.clear()
+            st.query_params.clear()
+            st.rerun()
