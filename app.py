@@ -27,7 +27,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ESTILOS CSS CON BOTONES Y TARJETAS DESTACADAS ---
+# --- ESTILOS CSS CON BOTONES GRANDES Y TARJETAS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
@@ -135,28 +135,41 @@ st.markdown("""
     }
 
     /* BOTONES GRANDES DE NAVEGACIÓN EN SIDEBAR */
+    [data-testid="stSidebar"] [data-testid="stWidgetLabel"] {
+        display: none !important;
+    }
+
+    [data-testid="stSidebar"] div[role="radiogroup"] {
+        gap: 12px !important;
+        width: 100% !important;
+    }
+
     [data-testid="stSidebar"] div[role="radiogroup"] label {
         background-color: #FFFFFF !important;
-        border: 1.5px solid #D8F3DC !important;
-        border-radius: 12px !important;
-        padding: 14px 18px !important;
-        margin-bottom: 10px !important;
-        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08) !important;
-        transition: all 0.2s ease !important;
+        border: 2px solid #D8F3DC !important;
+        border-radius: 14px !important;
+        padding: 16px 20px !important;
+        margin: 0 !important;
+        width: 100% !important;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08) !important;
+        transition: all 0.2s ease-in-out !important;
         cursor: pointer !important;
+        display: flex !important;
+        align-items: center !important;
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label p {
         color: #1B4332 !important;
         font-weight: 700 !important;
         font-size: 16px !important;
+        margin: 0 !important;
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
         background-color: #D8F3DC !important;
         border-color: #40916C !important;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15) !important;
         transform: translateY(-2px) !important;
-        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12) !important;
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p {
@@ -164,11 +177,11 @@ st.markdown("""
         font-weight: 800 !important;
     }
 
-    [data-testid="stSidebar"] div[role="radiogroup"] label [data-baseweb="radio"] > div:first-child {
+    [data-testid="stSidebar"] div[role="radiogroup"] label [data-baseweb="radio"] {
         display: none !important;
     }
 
-    /* BOTONES DE ACCIÓN PRINCIPALES */
+    /* BOTONES ACCIONABLES */
     div.stButton > button,
     div.stButton > button * {
         background-color: var(--primary-btn) !important;
@@ -180,9 +193,9 @@ st.markdown("""
         font-weight: 700 !important;
         padding: 1rem 2.2rem !important;
         font-size: 17px !important;
-        letter-spacing: 0.2px !important;
         min-height: 52px !important;
         box-shadow: 0 4px 14px rgba(45, 106, 79, 0.25) !important;
+        width: 100% !important;
         transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease !important;
     }
 
@@ -191,7 +204,7 @@ st.markdown("""
         background-color: var(--primary-btn-hover) !important;
         color: #FFFFFF !important;
         -webkit-text-fill-color: #FFFFFF !important;
-        transform: translateY(-3px) scale(1.01) !important;
+        transform: translateY(-2px) !important;
         box-shadow: 0 8px 20px rgba(45, 106, 79, 0.35) !important;
     }
 
@@ -590,6 +603,7 @@ else:
                 img = preparar_imagen(Image.open(imagen_file))
                 st.image(img, caption="Muestra seleccionada", use_container_width=True)
             else:
+                # Al quitar la imagen, se vacía el estado del reporte y del chat
                 if "ultimo_analisis" in st.session_state:
                     del st.session_state["ultimo_analisis"]
                 if "chat_plaga_historial" in st.session_state:
@@ -667,7 +681,7 @@ else:
             else:
                 st.info("Carga o toma una fotografía a la izquierda para desplegar aquí el reporte.")
 
-        # SOLO MUESTRA EL CHAT DE SEGUIMIENTO SI HAY UN ANÁLISIS GENERADO
+        # EL CHAT SE DESPLIEGA SOLO SI EXISTE UN ANÁLISIS PROCESADO
         if "ultimo_analisis" in st.session_state:
             st.write("---")
             st.subheader("💬 Chat de seguimiento sobre esta muestra")
