@@ -171,7 +171,6 @@ st.markdown("""
         box-shadow: 0 4px 16px rgba(45, 106, 79, 0.06) !important;
     }
 
-    /* --- BOTONES: más grandes y animados --- */
     div.stButton > button,
     div.stButton > button * {
         background-color: var(--primary-btn) !important;
@@ -329,25 +328,6 @@ raw_key = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY", ""))
 api_key = str(raw_key).strip().strip('"').strip("'")
 client = OpenAI(api_key=api_key) if api_key else None
 
-# --- INICIALIZACIÓN DE FIREBASE ---
-# En .streamlit/secrets.toml agrega una sección [firebase] con TODOS los
-# campos del JSON de tu cuenta de servicio, más una clave extra
-# "storage_bucket" con el nombre de tu bucket (ej: "agroia-3d151.appspot.com").
-#
-# [firebase]
-# type = "service_account"
-# project_id = "agroia-3d151"
-# private_key_id = "..."
-# private_key = "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-# client_email = "..."
-# client_id = "..."
-# auth_uri = "https://accounts.google.com/o/oauth2/auth"
-# token_uri = "https://oauth2.googleapis.com/token"
-# auth_provider_x509_cert_url = "https://www.googleapis.com/oauth2/v1/certs"
-# client_x509_cert_url = "..."
-# universe_domain = "googleapis.com"
-# storage_bucket = "agroia-3d151.appspot.com"
-
 @st.cache_resource
 def init_firebase():
     if not firebase_admin._apps:
@@ -365,7 +345,7 @@ except Exception as e:
     firebase_ok = False
     firebase_error = str(e)
 
-# --- BASE DE DATOS SQLITE (usuarios, sesiones y conversaciones del asistente general) ---
+# --- BASE DE DATOS SQLITE ---
 DB_NAME = "agroia_v4.db"
 
 def init_db():
@@ -405,9 +385,6 @@ def init_db():
             FOREIGN KEY (conversacion_id) REFERENCES conversaciones (id)
         )
     ''')
-    # La tabla "historial" de diagnósticos ya no se usa: todo el historial de
-    # detección de plagas (imagen + diagnóstico + chat de seguimiento) vive
-    # ahora por completo en Firestore, colección "historial_cultivos".
     conn.commit()
     conn.close()
 
@@ -485,9 +462,8 @@ def encode_image_to_base64(image_pil):
     image_pil.save(buffered, format="JPEG", quality=85, optimize=True)
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-# --- FUNCIONES DE FIREBASE (STORAGE + FIRESTORE) ---
+# --- FUNCIONES DE FIREBASE ---
 def subir_imagen_firebase(image_pil, usuario):
-    """Sube la imagen a Firebase Storage en la carpeta 'cultivos/' y devuelve la URL pública."""
     buffer = io.BytesIO()
     image_pil.save(buffer, format="JPEG", quality=85, optimize=True)
     buffer.seek(0)
@@ -499,8 +475,6 @@ def subir_imagen_firebase(image_pil, usuario):
     return blob.public_url
 
 def crear_diagnostico_firestore(usuario, cultivo, diagnostico, imagen_url):
-    """Crea el documento del diagnóstico (imagen + reporte) y devuelve su ID para poder
-    seguir agregando los mensajes del chat de seguimiento sobre esa misma muestra."""
     doc_ref = db_firestore.collection("historial_cultivos").document()
     doc_ref.set({
         "usuario": usuario,
@@ -513,13 +487,11 @@ def crear_diagnostico_firestore(usuario, cultivo, diagnostico, imagen_url):
     return doc_ref.id
 
 def agregar_mensaje_chat_firestore(doc_id, role, content):
-    """Agrega un mensaje (usuario o asistente) al chat de seguimiento de un diagnóstico."""
     db_firestore.collection("historial_cultivos").document(doc_id).update({
         "chat": firestore.ArrayUnion([{"role": role, "content": content}])
     })
 
 def obtener_historial_firestore(usuario):
-    """Consulta el historial del usuario en Firestore, ordenado por fecha descendente."""
     docs = (
         db_firestore.collection("historial_cultivos")
         .where("usuario", "==", usuario)
@@ -665,6 +637,14 @@ else:
             if imagen_file:
                 img = preparar_imagen(Image.open(imagen_file))
                 st.image(img, caption="Muestra seleccionada", use_container_width=True)
+            else:
+                # SI SE QUITA LA IMAGEN, LIMPIAR EL REPORTE Y EL CHAT DE SEGUIMIENTO
+                if "ultimo_analisis" in st.session_state:
+                    del st.session_state["ultimo_analisis"]
+                if "chat_plaga_historial" in st.session_state:
+                    del st.session_state["chat_plaga_historial"]
+                if "diag_doc_id" in st.session_state:
+                    del st.session_state["diag_doc_id"]
 
         with col2:
             st.subheader("Resultado del Análisis")
@@ -814,88 +794,3 @@ else:
                     break
 
         chat_seleccionado = st.sidebar.selectbox("Historial de Consultas Generales", lista_opciones, index=index_seleccionado)
-        selected_id = opciones_map[chat_seleccionado]
-
-        if selected_id is None:
-            if "current_chat_id" in st.session_state and "switch_trigger" not in st.session_state:
-                del st.session_state.current_chat_id
-                st.session_state.messages = []
-        else:
-            if st.session_state.get("current_chat_id") != selected_id:
-                st.session_state.current_chat_id = selected_id
-                cursor.execute("SELECT rol, contenido FROM mensajes WHERE conversacion_id = ? ORDER BY id ASC", (selected_id,))
-                mensajes_db = cursor.fetchall()
-                st.session_state.messages = [{"role": m[0], "content": m[1]} for m in mensajes_db]
-
-        if "switch_trigger" in st.session_state:
-            del st.session_state.switch_trigger
-
-        for msg in st.session_state.messages:
-            with st.chat_message(msg["role"]):
-                st.markdown(msg["content"])
-
-        if prompt := st.chat_input("Haz tu consulta agronómica general aquí..."):
-            if "current_chat_id" not in st.session_state:
-                titulo_chat = prompt[:30] + "..." if len(prompt) > 30 else prompt
-                cursor.execute("INSERT INTO conversaciones (usuario, titulo) VALUES (?, ?)", (st.session_state.usuario, titulo_chat))
-                conn.commit()
-                st.session_state.current_chat_id = cursor.lastrowid
-
-            st.session_state.switch_trigger = True
-            st.session_state.messages.append({"role": "user", "content": prompt})
-            cursor.execute("INSERT INTO mensajes (conversacion_id, rol, contenido) VALUES (?, ?, ?)",
-                           (st.session_state.current_chat_id, "user", prompt))
-            conn.commit()
-
-            with st.chat_message("user"):
-                st.markdown(prompt)
-
-            with st.chat_message("assistant"):
-                if client:
-                    try:
-                        history = [{"role": "system", "content": "Eres un experto agrónomo que responde en español sencillo, directo y profesional a consultas generales."}] + st.session_state.messages
-                        res = client.chat.completions.create(
-                            model="gpt-4o-mini",
-                            messages=history,
-                            max_tokens=1000
-                        )
-                        text = res.choices[0].message.content
-                        st.markdown(text)
-
-                        st.session_state.messages.append({"role": "assistant", "content": text})
-                        cursor.execute("INSERT INTO mensajes (conversacion_id, rol, contenido) VALUES (?, ?, ?)",
-                                       (st.session_state.current_chat_id, "assistant", text))
-                        conn.commit()
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Error: {e}")
-                else:
-                    st.error("No hay API Key configurada.")
-
-        conn.close()
-
-    elif opcion == "Mi Cuenta":
-        st.title("Perfil de Usuario")
-        st.caption("Detalles de tu cuenta de AGRO IA.")
-
-        st.write(f"**Nombre:** {st.session_state.nombre_completo}")
-        st.write(f"**Usuario:** {st.session_state.usuario}")
-        st.write("---")
-
-        col_logout, _ = st.columns([1, 2])
-        with col_logout:
-            if st.button("Cerrar sesión", use_container_width=True):
-                if "token" in st.session_state:
-                    cerrar_sesion_db(st.session_state.token)
-
-                clear_local_storage_token()
-
-                st.session_state.autenticado = False
-                st.session_state.usuario = ""
-                st.session_state.nombre_completo = ""
-                st.session_state.messages = []
-                if "current_chat_id" in st.session_state:
-                    del st.session_state.current_chat_id
-
-                st.query_params.clear()
-                st.rerun()
