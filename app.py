@@ -27,7 +27,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ESTILOS CSS REFORZADOS (DISEÑO EXACTO A LA IMAGEN) ---
+# --- ESTILOS CSS REFORZADOS (INYECCIÓN DIRECCIÓN A NIVELES DE DOM) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
@@ -43,7 +43,7 @@ st.markdown("""
         background-color: transparent !important;
     }
 
-    /* TITULOS PRINCIPALES CON TIPOGRAFÍA POPPINS VERDE OSCURO */
+    /* TITULOS PRINCIPALES */
     .stApp h1, .stApp h2, .stApp h3, .stApp h4,
     [data-testid="stMarkdownContainer"] h1, 
     [data-testid="stMarkdownContainer"] h2, 
@@ -58,7 +58,7 @@ st.markdown("""
     }
 
     /* BARRA LATERAL VERDE BOSQUE FORZADA */
-    section[data-testid="stSidebar"] {
+    section[data-testid="stSidebar"], [data-testid="stSidebar"] > div:first-child {
         background-color: #1B4D3E !important;
     }
 
@@ -70,8 +70,7 @@ st.markdown("""
     }
 
     section[data-testid="stSidebar"] p, 
-    section[data-testid="stSidebar"] span, 
-    section[data-testid="stSidebar"] label {
+    section[data-testid="stSidebar"] span {
         color: #B2D8C6 !important;
     }
 
@@ -79,75 +78,38 @@ st.markdown("""
         border-color: rgba(255, 255, 255, 0.15) !important;
     }
 
-    /* OCULTAR ETIQUETA DEL WIDGET */
-    section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] {
-        display: none !important;
-    }
-
-    /* CONTENEDOR DE BOTONES DE NAVEGACIÓN EN SIDEBAR */
-    section[data-testid="stSidebar"] div[role="radiogroup"] {
-        gap: 10px !important;
-        width: 100% !important;
-        background: transparent !important;
-    }
-
-    /* ESTILO BOTÓN PÍLDORA DESSELECCIONADO */
-    section[data-testid="stSidebar"] div[role="radiogroup"] > label {
+    /* BOTONES DE LA NAVEGACIÓN LATERAL (ESTILO PÍLDORA) */
+    section[data-testid="stSidebar"] .stButton > button {
         background-color: #FFFFFF !important;
-        border-radius: 20px !important;
-        padding: 8px 16px !important;
-        margin: 0 0 4px 0 !important;
-        width: 100% !important;
-        cursor: pointer !important;
+        color: #1B4D3E !important;
+        border-radius: 25px !important;
+        border: none !important;
+        font-family: 'Poppins', sans-serif !important;
+        font-weight: 700 !important;
+        padding: 0.6rem 1.2rem !important;
+        margin-bottom: 8px !important;
+        box-shadow: 0px 3px 6px rgba(0,0,0,0.12) !important;
+        text-align: left !important;
+        justify-content: flex-start !important;
         display: flex !important;
         align-items: center !important;
-        border: none !important;
-        box-shadow: 0px 2px 5px rgba(0,0,0,0.2) !important;
     }
 
-    section[data-testid="stSidebar"] div[role="radiogroup"] > label p {
-        color: #1B4D3E !important;
-        font-weight: 700 !important;
-        font-size: 15px !important;
-        margin: 0 !important;
-    }
-
-    /* ESTILO BOTÓN PÍLDORA SELECCIONADO (VERDE CLARO PASTEL) */
-    section[data-testid="stSidebar"] div[role="radiogroup"] > label:has(input:checked) {
+    /* BOTÓN SELECCIONADO (VERDE CLARO PASTEL) */
+    section[data-testid="stSidebar"] .stButton > button.nav-active {
         background-color: #D2EBD9 !important;
-        box-shadow: 0px 3px 8px rgba(0,0,0,0.25) !important;
-    }
-
-    section[data-testid="stSidebar"] div[role="radiogroup"] > label:has(input:checked) p {
         color: #0E382B !important;
         font-weight: 800 !important;
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.2) !important;
     }
 
-    /* AJUSTE DEL INDICADOR CÍRCULO (RADIO) */
-    section[data-testid="stSidebar"] div[role="radiogroup"] > label [data-baseweb="radio"] {
-        margin-right: 10px !important;
+    section[data-testid="stSidebar"] .stButton > button:hover {
+        background-color: #EBF7EE !important;
+        color: #0E382B !important;
     }
 
-    /* CAJAS DE MENSAJES Y NOTIFICACIONES */
-    div[data-testid="stNotification"] {
-        background-color: #D8ECF8 !important;
-        color: #1B4332 !important;
-        border: none !important;
-        border-radius: 10px !important;
-    }
-
-    div[data-testid="stNotification"] * {
-        color: #1B4332 !important;
-    }
-
-    [data-testid="stChatMessage"] {
-        background-color: #FFFFFF !important;
-        border: 1px solid #D2EBD9 !important;
-        border-radius: 12px !important;
-    }
-
-    /* BOTONES DE ACCIÓN PRINCIPALES */
-    div.stButton > button {
+    /* BOTONES DE ACCIÓN PRINCIPALES EN EL ÁREA CENTRAL */
+    .main .stButton > button {
         background-color: #1B4D3E !important;
         color: #FFFFFF !important;
         border-radius: 12px !important;
@@ -159,7 +121,7 @@ st.markdown("""
         width: 100% !important;
     }
 
-    div.stButton > button:hover {
+    .main .stButton > button:hover {
         background-color: #266E59 !important;
     }
 
@@ -429,6 +391,9 @@ if "autenticado" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+if "opcion_nav" not in st.session_state:
+    st.session_state.opcion_nav = "Inicio e Historial"
+
 # --- ACCESO ---
 if not st.session_state.autenticado:
     try_restore_from_local_storage()
@@ -474,12 +439,24 @@ else:
     st.sidebar.caption(f"Usuario activo: {st.session_state.usuario}")
     st.sidebar.write("---")
 
-    opcion_mostrada = st.sidebar.radio(
-        "Navegación",
-        ["🏠  Inicio e Historial", "🐛  Detectar Plaga", "🤖  Asistente Virtual", "👤  Mi Cuenta"],
-        label_visibility="collapsed"
-    )
-    opcion = opcion_mostrada.split("  ", 1)[1]
+    # --- BOTONES DE NAVEGACIÓN PERSONALIZADOS EN LUGAR DE RADIO ---
+    opciones = [
+        ("🏠 Inicio e Historial", "Inicio e Historial"),
+        ("🐛 Detectar Plaga", "Detectar Plaga"),
+        ("🤖 Asistente Virtual", "Asistente Virtual"),
+        ("👤 Mi Cuenta", "Mi Cuenta")
+    ]
+
+    for label_btn, clave in opciones:
+        is_active = st.session_state.opcion_nav == clave
+        btn_class = "nav-active" if is_active else ""
+        
+        # Inyección dinámica de clase CSS
+        if st.sidebar.button(f"{'🔘 ' if is_active else '⚪ '}{label_btn}", key=f"nav_{clave}", use_container_width=True):
+            st.session_state.opcion_nav = clave
+            st.rerun()
+
+    opcion = st.session_state.opcion_nav
 
     if opcion == "Inicio e Historial":
         st.title(f"¡Bienvenido, {st.session_state.nombre_completo}! 🌿")
