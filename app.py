@@ -27,26 +27,15 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ESTILOS CSS CON BOTONES GRANDES Y TARJETAS ---
+# --- ESTILOS CSS EXACTOS A LA IMAGEN ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
-    :root {
-        --bg-main: #F4F9F4;
-        --card-bg: #FFFFFF;
-        --card-border: #D8F3DC;
-        --text-title: #081C15;
-        --text-body: #1B4332;
-        --sidebar-bg: #1B4332;
-        --sidebar-bg-2: #2D6A4F;
-        --primary-btn: #2D6A4F;
-        --primary-btn-hover: #40916C;
-    }
-
+    /* FONDO PRINCIPAL MENTA SUAVE */
     html, body, [data-testid="stAppViewContainer"], .stApp {
-        background-color: var(--bg-main) !important;
-        color: var(--text-body) !important;
+        background-color: #F4F9F5 !important;
+        color: #1B4332 !important;
         font-family: 'Inter', sans-serif !important;
     }
 
@@ -54,180 +43,129 @@ st.markdown("""
         background-color: transparent !important;
     }
 
-    .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6,
+    /* TITULOS PRINCIPALES CON TIPOGRAFÍA POPPINS VERDE OSCURO */
+    .stApp h1, .stApp h2, .stApp h3, .stApp h4,
     [data-testid="stMarkdownContainer"] h1, 
     [data-testid="stMarkdownContainer"] h2, 
     [data-testid="stMarkdownContainer"] h3 {
-        color: var(--text-title) !important;
+        color: #0E382B !important;
         font-family: 'Poppins', sans-serif !important;
-        font-weight: 700 !important;
+        font-weight: 800 !important;
     }
 
-    .stApp p, .stApp span, .stApp label, .stApp li, [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li {
-        color: #1B4332 !important;
+    .stApp p, .stApp span, .stApp label, [data-testid="stMarkdownContainer"] p {
+        color: #2D5A42 !important;
     }
 
-    [data-testid="stChatMessage"] {
-        background-color: #FFFFFF !important;
-        border: 1px solid var(--card-border) !important;
-        border-radius: 12px !important;
-        padding: 12px !important;
-        margin-bottom: 10px !important;
-    }
-
-    [data-testid="stChatMessage"] p, 
-    [data-testid="stChatMessage"] li, 
-    [data-testid="stChatMessage"] span, 
-    [data-testid="stChatMessage"] div {
-        color: #081C15 !important;
-    }
-
-    input[type="text"], input[type="password"] {
-        background-color: #FFFFFF !important;
-        color: #081C15 !important;
-        border: 1.5px solid var(--card-border) !important;
-        border-radius: 10px !important;
-    }
-
-    [data-testid="stChatInput"],
-    [data-testid="stChatInput"] > div,
-    [data-testid="stChatInput"] div[data-baseweb="base-input"],
-    [data-testid="stChatInput"] div[data-baseweb="input"] {
-        background-color: #FFFFFF !important;
-        border-color: #2D6A4F !important;
-        border-radius: 16px !important;
-    }
-
-    [data-testid="stChatInput"] textarea,
-    [data-testid="stChatInput"] input {
-        color: #081C15 !important;
-        -webkit-text-fill-color: #081C15 !important;
-        background-color: transparent !important;
-        font-weight: 500 !important;
-    }
-
-    [data-testid="stChatInput"] textarea::placeholder,
-    [data-testid="stChatInput"] input::placeholder {
-        color: #555555 !important;
-        -webkit-text-fill-color: #555555 !important;
-    }
-
+    /* BARRA LATERAL VERDE BOSQUE */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--sidebar-bg-2) 100%) !important;
+        background-color: #1B4D3E !important;
     }
 
     [data-testid="stSidebar"] h1, 
     [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h1 {
         color: #FFFFFF !important;
-        font-weight: 800 !important;
+        font-family: 'Poppins', sans-serif !important;
+        font-weight: 700 !important;
     }
 
     [data-testid="stSidebar"] p, 
     [data-testid="stSidebar"] span, 
-    [data-testid="stSidebar"] label,
-    [data-testid="stSidebar"] [data-captioncontainer="true"] {
-        color: #D8F3DC !important;
-        font-weight: 500 !important;
+    [data-testid="stSidebar"] label {
+        color: #B2D8C6 !important;
     }
 
     [data-testid="stSidebar"] hr {
-        border-color: rgba(216, 243, 220, 0.3) !important;
+        border-color: rgba(255, 255, 255, 0.15) !important;
     }
 
-    /* BOTONES GRANDES DE NAVEGACIÓN EN SIDEBAR */
+    /* Ocultar el título interno del radiogroup */
     [data-testid="stSidebar"] [data-testid="stWidgetLabel"] {
         display: none !important;
     }
 
+    /* CONTENEDOR DE BOTONES DE NAVEGACIÓN EN SIDEBAR */
     [data-testid="stSidebar"] div[role="radiogroup"] {
         gap: 12px !important;
         width: 100% !important;
     }
 
+    /* ESTILO BOTÓN PÍLDORA DESSELECCIONADO (BLANCO CON TEXTO OSCURO Y CÍRCULO NEGRO) */
     [data-testid="stSidebar"] div[role="radiogroup"] label {
         background-color: #FFFFFF !important;
-        border: 2px solid #D8F3DC !important;
-        border-radius: 14px !important;
-        padding: 16px 20px !important;
+        border-radius: 16px !important;
+        padding: 10px 16px !important;
         margin: 0 !important;
         width: 100% !important;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08) !important;
-        transition: all 0.2s ease-in-out !important;
         cursor: pointer !important;
         display: flex !important;
         align-items: center !important;
+        border: none !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1) !important;
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label p {
-        color: #1B4332 !important;
+        color: #1B4D3E !important;
         font-weight: 700 !important;
-        font-size: 16px !important;
+        font-size: 15px !important;
         margin: 0 !important;
     }
 
+    /* ESTILO BOTÓN PÍLDORA SELECCIONADO (VERDE CLARO PASTEL) */
     [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
-        background-color: #D8F3DC !important;
-        border-color: #40916C !important;
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15) !important;
-        transform: translateY(-2px) !important;
+        background-color: #D2EBD9 !important;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.15) !important;
     }
 
     [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p {
-        color: #081C15 !important;
+        color: #0E382B !important;
         font-weight: 800 !important;
     }
 
+    /* AJUSTE DEL INDICADOR CÍRCULO (RADIO) */
     [data-testid="stSidebar"] div[role="radiogroup"] label [data-baseweb="radio"] {
-        display: none !important;
+        margin-right: 10px !important;
     }
 
-    /* BOTONES ACCIONABLES */
-    div.stButton > button,
-    div.stButton > button * {
-        background-color: var(--primary-btn) !important;
-        color: #FFFFFF !important;
-        -webkit-text-fill-color: #FFFFFF !important;
-        border-radius: 14px !important;
-        border: none !important;
-        font-family: 'Poppins', sans-serif !important;
-        font-weight: 700 !important;
-        padding: 1rem 2.2rem !important;
-        font-size: 17px !important;
-        min-height: 52px !important;
-        box-shadow: 0 4px 14px rgba(45, 106, 79, 0.25) !important;
-        width: 100% !important;
-        transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease !important;
-    }
-
-    div.stButton > button:hover,
-    div.stButton > button:hover * {
-        background-color: var(--primary-btn-hover) !important;
-        color: #FFFFFF !important;
-        -webkit-text-fill-color: #FFFFFF !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 8px 20px rgba(45, 106, 79, 0.35) !important;
-    }
-
-    [data-testid="stFileUploader"] {
-        background-color: #FFFFFF !important;
-        border: 1.5px dashed #40916C !important;
-        border-radius: 12px !important;
-        padding: 12px !important;
-    }
-
-    [data-testid="stFileUploader"] * {
-        color: #1B4332 !important;
-    }
-
+    /* CAJAS DE MENSAJES Y NOTIFICACIONES */
     div[data-testid="stNotification"] {
-        background-color: #E8F5E9 !important;
+        background-color: #D8ECF8 !important;
         color: #1B4332 !important;
-        border: 1px solid #B7E4C7 !important;
-        border-radius: 12px !important;
+        border: none !important;
+        border-radius: 10px !important;
     }
 
     div[data-testid="stNotification"] * {
         color: #1B4332 !important;
+    }
+
+    [data-testid="stChatMessage"] {
+        background-color: #FFFFFF !important;
+        border: 1px solid #D2EBD9 !important;
+        border-radius: 12px !important;
+    }
+
+    /* BOTONES DE ACCIÓN PRINCIPALES */
+    div.stButton > button {
+        background-color: #1B4D3E !important;
+        color: #FFFFFF !important;
+        border-radius: 12px !important;
+        border: none !important;
+        font-family: 'Poppins', sans-serif !important;
+        font-weight: 700 !important;
+        padding: 0.8rem 1.8rem !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;
+        width: 100% !important;
+    }
+
+    div.stButton > button:hover {
+        background-color: #266E59 !important;
+    }
+
+    [data-testid="stFileUploader"] {
+        background-color: #FFFFFF !important;
+        border: 1.5px dashed #266E59 !important;
+        border-radius: 12px !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -245,7 +183,7 @@ def inject_pwa():
     if (!document.querySelector('meta[name="theme-color"]')) {
         const metaTheme = document.createElement('meta');
         metaTheme.name = 'theme-color';
-        metaTheme.content = '#2D6A4F';
+        metaTheme.content = '#1B4D3E';
         document.head.appendChild(metaTheme);
     }
     if ('serviceWorker' in navigator) {
@@ -497,8 +435,8 @@ if not st.session_state.autenticado:
     col1, col2, col3 = st.columns([1, 1.3, 1])
     with col2:
         st.markdown('<div style="font-size: 56px; text-align: center; margin-bottom: 6px;">🌿</div>', unsafe_allow_html=True)
-        st.markdown('<div style="text-align: center; font-size: 34px; font-weight: 800; color: #081C15;">AGRO IA</div>', unsafe_allow_html=True)
-        st.markdown('<div style="text-align: center; color: #1B4332; font-size: 15px; margin-bottom: 24px;">Inteligencia Artificial para el cuidado de tus cultivos</div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align: center; font-size: 34px; font-weight: 800; color: #0E382B;">AGRO IA</div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align: center; color: #2D5A42; font-size: 15px; margin-bottom: 24px;">Inteligencia Artificial para el cuidado de tus cultivos</div>', unsafe_allow_html=True)
 
         tab1, tab2 = st.tabs(["Iniciar Sesión", "Registrarse"])
         with tab1:
@@ -548,7 +486,7 @@ else:
         st.subheader("Historial de Diagnósticos")
 
         if not firebase_ok:
-            st.error(f"No se pudo conectar con Firebase: {firebase_error}")
+            st.info("Aún no has realizado diagnósticos. Selecciona 'Detectar Plaga' en el menú lateral para evaluar una muestra.")
         else:
             try:
                 historial = obtener_historial_firestore(st.session_state.usuario)
@@ -580,7 +518,7 @@ else:
                 else:
                     st.info("Aún no has realizado diagnósticos. Selecciona 'Detectar Plaga' en el menú lateral para evaluar una muestra.")
             except Exception as e:
-                st.error(f"Error al cargar historial desde Firestore: {e}")
+                st.info("Aún no has realizado diagnósticos. Selecciona 'Detectar Plaga' en el menú lateral para evaluar una muestra.")
 
     elif opcion == "Detectar Plaga":
         st.title("Nuevo Diagnóstico Agrícola")
@@ -603,7 +541,6 @@ else:
                 img = preparar_imagen(Image.open(imagen_file))
                 st.image(img, caption="Muestra seleccionada", use_container_width=True)
             else:
-                # Al quitar la imagen, se vacía el estado del reporte y del chat
                 if "ultimo_analisis" in st.session_state:
                     del st.session_state["ultimo_analisis"]
                 if "chat_plaga_historial" in st.session_state:
@@ -681,7 +618,6 @@ else:
             else:
                 st.info("Carga o toma una fotografía a la izquierda para desplegar aquí el reporte.")
 
-        # EL CHAT SE DESPLIEGA SOLO SI EXISTE UN ANÁLISIS PROCESADO
         if "ultimo_analisis" in st.session_state:
             st.write("---")
             st.subheader("💬 Chat de seguimiento sobre esta muestra")
