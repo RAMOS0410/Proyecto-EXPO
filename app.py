@@ -27,7 +27,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ESTILOS CSS EXACTOS A LA IMAGEN ---
+# --- ESTILOS CSS REFORZADOS (DISEÑO EXACTO A LA IMAGEN) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
@@ -57,54 +57,55 @@ st.markdown("""
         color: #2D5A42 !important;
     }
 
-    /* BARRA LATERAL VERDE BOSQUE */
-    [data-testid="stSidebar"] {
+    /* BARRA LATERAL VERDE BOSQUE FORZADA */
+    section[data-testid="stSidebar"] {
         background-color: #1B4D3E !important;
     }
 
-    [data-testid="stSidebar"] h1, 
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h1 {
+    section[data-testid="stSidebar"] h1, 
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h1 {
         color: #FFFFFF !important;
         font-family: 'Poppins', sans-serif !important;
         font-weight: 700 !important;
     }
 
-    [data-testid="stSidebar"] p, 
-    [data-testid="stSidebar"] span, 
-    [data-testid="stSidebar"] label {
+    section[data-testid="stSidebar"] p, 
+    section[data-testid="stSidebar"] span, 
+    section[data-testid="stSidebar"] label {
         color: #B2D8C6 !important;
     }
 
-    [data-testid="stSidebar"] hr {
+    section[data-testid="stSidebar"] hr {
         border-color: rgba(255, 255, 255, 0.15) !important;
     }
 
-    /* Ocultar el título interno del radiogroup */
-    [data-testid="stSidebar"] [data-testid="stWidgetLabel"] {
+    /* OCULTAR ETIQUETA DEL WIDGET */
+    section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] {
         display: none !important;
     }
 
     /* CONTENEDOR DE BOTONES DE NAVEGACIÓN EN SIDEBAR */
-    [data-testid="stSidebar"] div[role="radiogroup"] {
-        gap: 12px !important;
+    section[data-testid="stSidebar"] div[role="radiogroup"] {
+        gap: 10px !important;
         width: 100% !important;
+        background: transparent !important;
     }
 
-    /* ESTILO BOTÓN PÍLDORA DESSELECCIONADO (BLANCO CON TEXTO OSCURO Y CÍRCULO NEGRO) */
-    [data-testid="stSidebar"] div[role="radiogroup"] label {
+    /* ESTILO BOTÓN PÍLDORA DESSELECCIONADO */
+    section[data-testid="stSidebar"] div[role="radiogroup"] > label {
         background-color: #FFFFFF !important;
-        border-radius: 16px !important;
-        padding: 10px 16px !important;
-        margin: 0 !important;
+        border-radius: 20px !important;
+        padding: 8px 16px !important;
+        margin: 0 0 4px 0 !important;
         width: 100% !important;
         cursor: pointer !important;
         display: flex !important;
         align-items: center !important;
         border: none !important;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.1) !important;
+        box-shadow: 0px 2px 5px rgba(0,0,0,0.2) !important;
     }
 
-    [data-testid="stSidebar"] div[role="radiogroup"] label p {
+    section[data-testid="stSidebar"] div[role="radiogroup"] > label p {
         color: #1B4D3E !important;
         font-weight: 700 !important;
         font-size: 15px !important;
@@ -112,18 +113,18 @@ st.markdown("""
     }
 
     /* ESTILO BOTÓN PÍLDORA SELECCIONADO (VERDE CLARO PASTEL) */
-    [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
+    section[data-testid="stSidebar"] div[role="radiogroup"] > label:has(input:checked) {
         background-color: #D2EBD9 !important;
-        box-shadow: 0 3px 8px rgba(0,0,0,0.15) !important;
+        box-shadow: 0px 3px 8px rgba(0,0,0,0.25) !important;
     }
 
-    [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p {
+    section[data-testid="stSidebar"] div[role="radiogroup"] > label:has(input:checked) p {
         color: #0E382B !important;
         font-weight: 800 !important;
     }
 
     /* AJUSTE DEL INDICADOR CÍRCULO (RADIO) */
-    [data-testid="stSidebar"] div[role="radiogroup"] label [data-baseweb="radio"] {
+    section[data-testid="stSidebar"] div[role="radiogroup"] > label [data-baseweb="radio"] {
         margin-right: 10px !important;
     }
 
