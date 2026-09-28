@@ -11,10 +11,6 @@ from openai import OpenAI
 import streamlit as st
 import streamlit.components.v1 as components
 
-# --- FIREBASE ---
-import firebase_admin
-from firebase_admin import credentials, firestore, storage
-
 # --- CONFIGURACIÓN E ICONO ---
 try:
     favicon_img = Image.open("logo.png")
@@ -205,30 +201,7 @@ raw_key = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY", ""))
 api_key = str(raw_key).strip().strip('"').strip("'")
 client = OpenAI(api_key=api_key) if api_key else None
 
-@st.cache_resource
-def init_firebase():
-    if not firebase_admin._apps:
-        firebase_config = dict(st.secrets["firebase"])
-        storage_bucket = firebase_config.pop("storage_bucket", None)
-        
-        # Formatear la clave privada si incluye saltos de línea escapados
-        if "private_key" in firebase_config and isinstance(firebase_config["private_key"], str):
-            firebase_config["private_key"] = firebase_config["private_key"].replace("\\n", "\n")
-            
-        cred = credentials.Certificate(firebase_config)
-        firebase_admin.initialize_app(cred, {"storageBucket": storage_bucket})
-    return firestore.client(), storage.bucket()
-
-try:
-    db_firestore, firebase_bucket = init_firebase()
-    firebase_ok = True
-    firebase_error = ""
-except Exception as e:
-    db_firestore, firebase_bucket = None, None
-    firebase_ok = False
-    firebase_error = str(e)
-
-# --- BASE DE DATOS SQLITE ---
+# --- BASE DE DATOS LOCAL SQLITE ---
 DB_NAME = "agroia_v4.db"
 
 def init_db():
@@ -247,6 +220,16 @@ def init_db():
         CREATE TABLE IF NOT EXISTS sesiones (
             token TEXT PRIMARY KEY,
             usuario TEXT,
+            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS diagnosticos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario TEXT,
+            cultivo TEXT,
+            diagnostico TEXT,
+            imagen_b64 TEXT,
             fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
@@ -345,44 +328,28 @@ def encode_image_to_base64(image_pil):
     image_pil.save(buffered, format="JPEG", quality=85, optimize=True)
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-def subir_imagen_firebase(image_pil, usuario):
-    buffer = io.BytesIO()
-    image_pil.save(buffer, format="JPEG", quality=85, optimize=True)
-    buffer.seek(0)
+def guardar_diagnostico_local(usuario, cultivo, diagnostico, imagen_b64):
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO diagnosticos (usuario, cultivo, diagnostico, imagen_b64) VALUES (?, ?, ?, ?)",
+                       (usuario, cultivo, diagnostico, imagen_b64))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception:
+        return False
 
-    nombre_unico = f"cultivos/{usuario}_{secrets.token_hex(8)}.jpg"
-    blob = firebase_bucket.blob(nombre_unico)
-    blob.upload_from_file(buffer, content_type="image/jpeg")
-    blob.make_public()
-    return blob.public_url
-
-def crear_diagnostico_firestore(usuario, cultivo, diagnostico, imagen_url):
-    doc_ref = db_firestore.collection("historial_cultivos").document()
-    doc_ref.set({
-        "usuario": usuario,
-        "cultivo": cultivo,
-        "diagnostico": diagnostico,
-        "imagen_url": imagen_url,
-        "chat": [],
-        "fecha": firestore.SERVER_TIMESTAMP
-    })
-    return doc_ref.id
-
-def agregar_mensaje_chat_firestore(doc_id, role, content):
-    db_firestore.collection("historial_cultivos").document(doc_id).update({
-        "chat": firestore.ArrayUnion([{"role": role, "content": content}])
-    })
-
-def obtener_historial_firestore(usuario):
-    docs = db_firestore.collection("historial_cultivos").where("usuario", "==", usuario).stream()
-    resultados = []
-    for doc in docs:
-        data = doc.to_dict()
-        data["id"] = doc.id
-        resultados.append(data)
-    
-    resultados.sort(key=lambda x: x.get("fecha") if x.get("fecha") is not None else 0, reverse=True)
-    return resultados
+def obtener_historial_local(usuario):
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        cursor.execute("SELECT cultivo, diagnostico, imagen_b64, fecha FROM diagnosticos WHERE usuario = ? ORDER BY id DESC", (usuario,))
+        filas = cursor.fetchall()
+        conn.close()
+        return filas
+    except Exception:
+        return []
 
 inject_pwa()
 
@@ -497,40 +464,23 @@ else:
         
         st.markdown("## Historial de Diagnósticos")
 
-        if not firebase_ok:
-            st.error(f"Error de conexión con Firebase: {firebase_error}")
+        historial = obtener_historial_local(st.session_state.usuario)
+
+        if historial:
+            for cultivo, diagnostico, img_b64, fecha in historial:
+                fecha_str = str(fecha) if fecha else "Fecha reciente"
+
+                with st.expander(f"🌿 {cultivo} — {fecha_str}"):
+                    col_img, col_texto = st.columns([1, 1.5])
+                    with col_img:
+                        if img_b64:
+                            st.image(f"data:image/jpeg;base64,{img_b64}", use_container_width=True, caption="Muestra analizada")
+                        else:
+                            st.info("Sin imagen disponible.")
+                    with col_texto:
+                        st.markdown(diagnostico)
         else:
-            try:
-                historial = obtener_historial_firestore(st.session_state.usuario)
-
-                if historial:
-                    for registro in historial:
-                        fecha = registro.get("fecha")
-                        fecha_str = fecha.strftime("%d/%m/%Y %H:%M") if hasattr(fecha, 'strftime') else "Fecha reciente"
-                        cultivo = registro.get("cultivo", "Cultivo Identificado")
-
-                        with st.expander(f"🌿 {cultivo} — {fecha_str}"):
-                            col_img, col_texto = st.columns([1, 1.5])
-                            with col_img:
-                                imagen_url = registro.get("imagen_url")
-                                if imagen_url:
-                                    st.image(imagen_url, use_container_width=True, caption="Muestra analizada")
-                                else:
-                                    st.info("Sin imagen disponible para este registro.")
-                            with col_texto:
-                                st.markdown(registro.get("diagnostico", "Sin detalle disponible."))
-
-                            chat_guardado = registro.get("chat", [])
-                            if chat_guardado:
-                                st.write("---")
-                                st.markdown("**💬 Conversación de seguimiento:**")
-                                for msg in chat_guardado:
-                                    rol_label = "🧑 Tú" if msg.get("role") == "user" else "🤖 Asistente"
-                                    st.markdown(f"**{rol_label}:** {msg.get('content', '')}")
-                else:
-                    st.info("Aún no has realizado diagnósticos. Selecciona 'Detectar Plaga' en el menú lateral para evaluar una muestra.")
-            except Exception as e:
-                st.error(f"Error al obtener el historial: {e}")
+            st.info("Aún no has realizado diagnósticos. Selecciona 'Detectar Plaga' en el menú lateral para evaluar una muestra.")
 
     elif opcion == "Detectar Plaga":
         st.title("Nuevo Diagnóstico Agrícola")
@@ -557,8 +507,6 @@ else:
                     del st.session_state["ultimo_analisis"]
                 if "chat_plaga_historial" in st.session_state:
                     del st.session_state["chat_plaga_historial"]
-                if "diag_doc_id" in st.session_state:
-                    del st.session_state["diag_doc_id"]
 
         with col2:
             st.subheader("Resultado del Análisis")
@@ -615,23 +563,9 @@ else:
                                 if match_planta:
                                     cultivo_detectado = match_planta.group(1).strip()
 
-                                if firebase_ok:
-                                    try:
-                                        imagen_url = subir_imagen_firebase(img, st.session_state.usuario)
-                                        doc_id = crear_diagnostico_firestore(
-                                            usuario=st.session_state.usuario,
-                                            cultivo=cultivo_detectado,
-                                            diagnostico=resultado,
-                                            imagen_url=imagen_url
-                                        )
-                                        st.session_state.diag_doc_id = doc_id
-                                        st.success("¡Diagnóstico procesado y guardado con éxito!")
-                                    except Exception as e:
-                                        st.session_state.diag_doc_id = None
-                                        st.warning(f"Error al guardar en Firebase: {e}")
-                                else:
-                                    st.session_state.diag_doc_id = None
-                                    st.warning(f"Firebase no está conectado: {firebase_error}")
+                                ok_guardado = guardar_diagnostico_local(st.session_state.usuario, cultivo_detectado, resultado, base64_image)
+                                if ok_guardado:
+                                    st.success("¡Diagnóstico guardado en tu historial!")
 
                             except Exception as e:
                                 st.error(f"Error durante el procesamiento: {e}")
@@ -660,12 +594,6 @@ else:
                 with st.chat_message("user"):
                     st.markdown(prompt_seguimiento)
 
-                if firebase_ok and st.session_state.get("diag_doc_id"):
-                    try:
-                        agregar_mensaje_chat_firestore(st.session_state.diag_doc_id, "user", prompt_seguimiento)
-                    except Exception:
-                        pass
-
                 with st.chat_message("assistant"):
                     if client:
                         try:
@@ -684,13 +612,6 @@ else:
                             respuesta_bot = res.choices[0].message.content
                             st.markdown(respuesta_bot)
                             st.session_state.chat_plaga_historial.append({"role": "assistant", "content": respuesta_bot})
-
-                            if firebase_ok and st.session_state.get("diag_doc_id"):
-                                try:
-                                    agregar_mensaje_chat_firestore(st.session_state.diag_doc_id, "assistant", respuesta_bot)
-                                except Exception:
-                                    pass
-
                             st.rerun()
                         except Exception as e:
                             st.error(f"Error al responder: {e}")
