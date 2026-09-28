@@ -43,18 +43,21 @@ st.markdown("""
         background-color: transparent !important;
     }
 
-    /* TITULOS PRINCIPALES */
-    .stApp h1, .stApp h2, .stApp h3, .stApp h4,
-    [data-testid="stMarkdownContainer"] h1, 
-    [data-testid="stMarkdownContainer"] h2, 
-    [data-testid="stMarkdownContainer"] h3 {
+    /* TITULOS PRINCIPALES DEL ÁREA CENTRAL */
+    .main h1, .main h2, .main h3, .main h4,
+    [data-testid="stMainBlockContainer"] h1, 
+    [data-testid="stMainBlockContainer"] h2, 
+    [data-testid="stMainBlockContainer"] h3 {
         color: #143D2B !important;
         font-family: 'Poppins', sans-serif !important;
         font-weight: 800 !important;
     }
 
-    .stApp p, .stApp span, .stApp label, [data-testid="stMarkdownContainer"] p {
-        color: #556B60 !important;
+    /* TEXTO GENERAL SOLO EN EL ÁREA PRINCIPAL */
+    [data-testid="stMainBlockContainer"] p, 
+    [data-testid="stMainBlockContainer"] span, 
+    [data-testid="stMainBlockContainer"] label {
+        color: #2D5A42 !important;
     }
 
     /* BARRA LATERAL VERDE BOSQUE */
@@ -63,6 +66,18 @@ st.markdown("""
     [data-testid="stSidebarUserContent"],
     section[data-testid="stSidebar"] {
         background-color: #1B4D3E !important;
+    }
+
+    /* FORZAR TODO EL TEXTO DE LA BARRA LATERAL A BLANCO BRILLANTE */
+    [data-testid="stSidebar"] p, 
+    [data-testid="stSidebar"] span, 
+    [data-testid="stSidebar"] div,
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] h1,
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3 {
+        color: #FFFFFF !important;
+        font-weight: 500 !important;
     }
 
     /* ESTILO PÍLDORA BOTONES SIDEBAR */
@@ -433,10 +448,10 @@ else:
     st.sidebar.markdown(
         f"""
         <div style="margin-bottom: 15px;">
-            <h1 style="color: white !important; margin: 0; font-size: 26px; font-weight: 800;">AGRO IA 🌿</h1>
-            <p style="color: #B2D8C6 !important; margin: 5px 0 0 0; font-size: 13px;">Usuario activo: {st.session_state.usuario}</p>
+            <h1 style="color: #FFFFFF !important; margin: 0; font-size: 26px; font-weight: 800;">AGRO IA 🌿</h1>
+            <p style="color: #E2F1E7 !important; margin: 5px 0 0 0; font-size: 14px; font-weight: 600;">Usuario activo: {st.session_state.usuario}</p>
         </div>
-        <hr style="border: 0.5px solid rgba(255,255,255,0.2); margin-bottom: 20px;">
+        <hr style="border: 0.5px solid rgba(255,255,255,0.3); margin-bottom: 20px;">
         """,
         unsafe_allow_html=True
     )
