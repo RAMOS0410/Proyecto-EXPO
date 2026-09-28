@@ -210,6 +210,11 @@ def init_firebase():
     if not firebase_admin._apps:
         firebase_config = dict(st.secrets["firebase"])
         storage_bucket = firebase_config.pop("storage_bucket", None)
+        
+        # Formatear la clave privada si incluye saltos de línea escapados
+        if "private_key" in firebase_config and isinstance(firebase_config["private_key"], str):
+            firebase_config["private_key"] = firebase_config["private_key"].replace("\\n", "\n")
+            
         cred = credentials.Certificate(firebase_config)
         firebase_admin.initialize_app(cred, {"storageBucket": storage_bucket})
     return firestore.client(), storage.bucket()
@@ -217,6 +222,7 @@ def init_firebase():
 try:
     db_firestore, firebase_bucket = init_firebase()
     firebase_ok = True
+    firebase_error = ""
 except Exception as e:
     db_firestore, firebase_bucket = None, None
     firebase_ok = False
@@ -368,7 +374,6 @@ def agregar_mensaje_chat_firestore(doc_id, role, content):
     })
 
 def obtener_historial_firestore(usuario):
-    # Consulta simple sin order_by en la DB para evitar requerir un índice en Firebase
     docs = db_firestore.collection("historial_cultivos").where("usuario", "==", usuario).stream()
     resultados = []
     for doc in docs:
@@ -376,7 +381,6 @@ def obtener_historial_firestore(usuario):
         data["id"] = doc.id
         resultados.append(data)
     
-    # Ordenamiento seguro en memoria mediante Python
     resultados.sort(key=lambda x: x.get("fecha") if x.get("fecha") is not None else 0, reverse=True)
     return resultados
 
@@ -494,7 +498,7 @@ else:
         st.markdown("## Historial de Diagnósticos")
 
         if not firebase_ok:
-            st.error("Error de conexión con Firebase. Revisa tus credenciales en Secrets.")
+            st.error(f"Error de conexión con Firebase: {firebase_error}")
         else:
             try:
                 historial = obtener_historial_firestore(st.session_state.usuario)
@@ -606,7 +610,6 @@ else:
                                 st.session_state.ultimo_analisis = resultado
                                 st.session_state.chat_plaga_historial = []
 
-                                # Extraer nombre del cultivo para la vista del historial
                                 cultivo_detectado = "Cultivo / Diagnóstico"
                                 match_planta = re.search(r"🌱 \*\*Especie Vegetal:\*\*\s*(.*)", resultado)
                                 if match_planta:
@@ -628,7 +631,7 @@ else:
                                         st.warning(f"Error al guardar en Firebase: {e}")
                                 else:
                                     st.session_state.diag_doc_id = None
-                                    st.warning("Firebase no conectado.")
+                                    st.warning(f"Firebase no está conectado: {firebase_error}")
 
                             except Exception as e:
                                 st.error(f"Error durante el procesamiento: {e}")
