@@ -619,12 +619,13 @@ else:
                         st.error("No hay clave API de OpenAI configurada.")
 
     elif opcion == "Asistente Virtual":
-        st.title("Asistente Agrónomo")
+        st.title("Asistente Agrónomo 🤖")
         st.caption("Resuelve tus dudas generales sobre siembras, fertilizantes, rotación de cultivos y plagas.")
 
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
 
+        # Cargar historial de conversaciones del usuario
         cursor.execute("SELECT id, titulo FROM conversaciones WHERE usuario = ? ORDER BY id DESC", (st.session_state.usuario,))
         chats_existentes = cursor.fetchall()
 
@@ -642,6 +643,67 @@ else:
                     break
 
         chat_seleccionado = st.sidebar.selectbox("Historial de Consultas Generales", lista_opciones, index=index_seleccionado)
+        chat_id_actual = opciones_map[chat_seleccionado]
+        st.session_state.current_chat_id = chat_id_actual
+
+        # Cargar mensajes según la conversación seleccionada
+        mensajes_chat = []
+        if chat_id_actual is not None:
+            cursor.execute("SELECT rol, contenido FROM mensajes WHERE conversacion_id = ? ORDER BY id ASC", (chat_id_actual,))
+            mensajes_chat = cursor.fetchall()
+
+        # Renderizar historial de mensajes en pantalla
+        for rol, contenido in mensajes_chat:
+            with st.chat_message(rol):
+                st.markdown(contenido)
+
+        # Entrada de texto para el usuario
+        if prompt_user := st.chat_input("Escribe tu consulta agrícola aquí..."):
+            # Si es una nueva conversación, crear registro en la BD
+            if chat_id_actual is None:
+                titulo_chat = prompt_user[:30] + ("..." if len(prompt_user) > 30 else "")
+                cursor.execute("INSERT INTO conversaciones (usuario, titulo) VALUES (?, ?)", (st.session_state.usuario, titulo_chat))
+                conn.commit()
+                chat_id_actual = cursor.lastrowid
+                st.session_state.current_chat_id = chat_id_actual
+
+            # Guardar y renderizar mensaje del usuario
+            cursor.execute("INSERT INTO mensajes (conversacion_id, rol, contenido) VALUES (?, ?, ?)", (chat_id_actual, "user", prompt_user))
+            conn.commit()
+
+            with st.chat_message("user"):
+                st.markdown(prompt_user)
+
+            # Generar y guardar respuesta del Asistente
+            with st.chat_message("assistant"):
+                if client:
+                    try:
+                        cursor.execute("SELECT rol, contenido FROM mensajes WHERE conversacion_id = ? ORDER BY id ASC", (chat_id_actual,))
+                        historial_db = cursor.fetchall()
+
+                        mensajes_openai = [
+                            {"role": "system", "content": "Eres un agrónomo y botánico experto. Responde con claridad, precisión técnica y recomendaciones prácticas sobre agricultura."}
+                        ] + [{"role": r, "content": c} for r, c in historial_db]
+
+                        response = client.chat.completions.create(
+                            model="gpt-4o-mini",
+                            messages=mensajes_openai,
+                            max_tokens=800
+                        )
+                        respuesta_bot = response.choices[0].message.content
+
+                        cursor.execute("INSERT INTO mensajes (conversacion_id, rol, contenido) VALUES (?, ?, ?)", (chat_id_actual, "assistant", respuesta_bot))
+                        conn.commit()
+
+                        st.markdown(respuesta_bot)
+                        st.rerun()
+
+                    except Exception as e:
+                        st.error(f"Error al generar respuesta: {e}")
+                else:
+                    st.error("No se ha configurado la clave API de OpenAI.")
+
+        conn.close()
 
     elif opcion == "Mi Cuenta":
         st.title("👤 Mi Cuenta")
