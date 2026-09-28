@@ -27,7 +27,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ESTILOS CSS REFORZADOS ---
+# --- ESTILOS CSS FORZADOS PARA STREAMLIT MODERNO ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
@@ -57,30 +57,26 @@ st.markdown("""
         color: #556B60 !important;
     }
 
-    /* BARRA LATERAL VERDE BOSQUE */
-    section[data-testid="stSidebar"], [data-testid="stSidebar"] > div:first-child {
+    /* BARRA LATERAL VERDE BOSQUE (FORZANDO A TODOS LOS NIVELES) */
+    [data-testid="stSidebar"],
+    [data-testid="stSidebar"] > div:first-child,
+    [data-testid="stSidebarUserContent"],
+    section[data-testid="stSidebar"] {
         background-color: #1B4D3E !important;
     }
 
-    /* OCULTAR ESPACIADO INTERNO DEL SIDEBAR PARA ALINEAR BANDERAS */
-    section[data-testid="stSidebar"] .block-container {
-        padding-top: 2rem !important;
-        padding-left: 1.2rem !important;
-        padding-right: 1.2rem !important;
-    }
-
     /* ESTILO PÍLDORA BOTONES SIDEBAR */
-    section[data-testid="stSidebar"] .stButton > button {
+    [data-testid="stSidebar"] .stButton > button {
         background-color: #FFFFFF !important;
         color: #1B4D3E !important;
-        border-radius: 12px !important;
+        border-radius: 20px !important;
         border: none !important;
         font-family: 'Poppins', sans-serif !important;
         font-weight: 700 !important;
         font-size: 14px !important;
-        padding: 0.55rem 1rem !important;
-        margin-bottom: 6px !important;
-        box-shadow: 0px 2px 5px rgba(0,0,0,0.15) !important;
+        padding: 0.6rem 1rem !important;
+        margin-bottom: 8px !important;
+        box-shadow: 0px 2px 6px rgba(0,0,0,0.12) !important;
         text-align: left !important;
         display: flex !important;
         justify-content: flex-start !important;
@@ -88,19 +84,17 @@ st.markdown("""
         width: 100% !important;
     }
 
-    /* ESTADO ACTIVO SELECCIONADO */
-    section[data-testid="stSidebar"] .stButton > button.nav-btn-active {
-        background-color: #D2EBD9 !important;
-        color: #143D2B !important;
-        font-weight: 800 !important;
+    [data-testid="stSidebar"] .stButton > button p {
+        color: #1B4D3E !important;
+        font-weight: 700 !important;
     }
 
-    section[data-testid="stSidebar"] .stButton > button:hover {
+    /* EFECTO HOVER EN NAVEGACIÓN */
+    [data-testid="stSidebar"] .stButton > button:hover {
         background-color: #EBF7EE !important;
-        color: #143D2B !important;
     }
 
-    /* ESTILO ALERTA CELESTE DE HISTORIAL VACÍO */
+    /* ALERTA CELESTE DE HISTORIAL VACÍO */
     .stAlert {
         background-color: #E3F2FD !important;
         color: #1E3A8A !important;
@@ -437,17 +431,17 @@ if not st.session_state.autenticado:
 else:
     # ENCABEZADO DE LA BARRA LATERAL
     st.sidebar.markdown(
-        """
-        <div style="margin-bottom: 20px;">
-            <h1 style="color: white; margin: 0; font-size: 26px; font-weight: 800; font-family: 'Poppins', sans-serif;">AGRO IA 🌿</h1>
-            <p style="color: #A0C4B8; margin: 4px 0 0 0; font-size: 13px;">Usuario activo: """ + str(st.session_state.usuario) + """</p>
+        f"""
+        <div style="margin-bottom: 15px;">
+            <h1 style="color: white !important; margin: 0; font-size: 26px; font-weight: 800;">AGRO IA 🌿</h1>
+            <p style="color: #B2D8C6 !important; margin: 5px 0 0 0; font-size: 13px;">Usuario activo: {st.session_state.usuario}</p>
         </div>
         <hr style="border: 0.5px solid rgba(255,255,255,0.2); margin-bottom: 20px;">
         """,
         unsafe_allow_html=True
     )
 
-    # NAVEGACIÓN CON FORMATO EXACTO A LA IMAGEN
+    # NAVEGACIÓN
     opciones = [
         ("🏠 Inicio e Historial", "Inicio e Historial"),
         ("🐛 Detectar Plaga", "Detectar Plaga"),
@@ -455,24 +449,25 @@ else:
         ("👤 Mi Cuenta", "Mi Cuenta")
     ]
 
-    for label_btn, clave in opciones:
+    for idx, (label_btn, clave) in enumerate(opciones):
         is_active = st.session_state.opcion_nav == clave
+        bullet = "🔴" if is_active else "⚪"
         
-        # Círculo activo (rojo/verde pastel) o inactivo
-        bullet = "🔴" if is_active else "⚫"
-        active_class = "nav-btn-active" if is_active else ""
-        
-        # Inyección CSS específica para la píldora activa
+        # INYECTAR ESTILO ESPECÍFICO PARA DESTACAR LA OPCIÓN SELECCIONADA EN VERDE PASTEL
         if is_active:
-            st.sidebar.markdown("""
+            st.sidebar.markdown(f"""
                 <style>
-                div[data-testid="stSidebar"] div.stButton:nth-child(n) button {
+                [data-testid="stSidebar"] .stButton:nth-of-type({idx+1}) > button {{
                     background-color: #D2EBD9 !important;
-                }
+                }}
+                [data-testid="stSidebar"] .stButton:nth-of-type({idx+1}) > button p {{
+                    color: #0E382B !important;
+                    font-weight: 800 !important;
+                }}
                 </style>
             """, unsafe_allow_html=True)
 
-        if st.sidebar.button(f"{bullet} {label_btn}", key=f"nav_{clave}", use_container_width=True):
+        if st.sidebar.button(f"{bullet}  {label_btn}", key=f"nav_{clave}", use_container_width=True):
             st.session_state.opcion_nav = clave
             st.rerun()
 
@@ -662,7 +657,7 @@ else:
                             if firebase_ok and st.session_state.get("diag_doc_id"):
                                 try:
                                     agregar_mensaje_chat_firestore(st.session_state.diag_doc_id, "assistant", respuesta_bot)
-                                mexcet Exception:
+                                except Exception:
                                     pass
 
                             st.rerun()
