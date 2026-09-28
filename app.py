@@ -57,7 +57,7 @@ st.markdown("""
         color: #556B60 !important;
     }
 
-    /* BARRA LATERAL VERDE BOSQUE (FORZANDO A TODOS LOS NIVELES) */
+    /* BARRA LATERAL VERDE BOSQUE */
     [data-testid="stSidebar"],
     [data-testid="stSidebar"] > div:first-child,
     [data-testid="stSidebarUserContent"],
@@ -453,7 +453,6 @@ else:
         is_active = st.session_state.opcion_nav == clave
         bullet = "🔴" if is_active else "⚪"
         
-        # INYECTAR ESTILO ESPECÍFICO PARA DESTACAR LA OPCIÓN SELECCIONADA EN VERDE PASTEL
         if is_active:
             st.sidebar.markdown(f"""
                 <style>
@@ -552,15 +551,21 @@ else:
                                 base64_image = encode_image_to_base64(img)
 
                                 prompt_analisis = """
-                                Asistente de identificación botánica y agronomía.
-                                Examina la muestra foliar presente en la fotografía y genera un reporte técnico en español.
+                                Analiza la imagen adjunta como un agrónomo y botánico experto de campo.
 
-                                Formato requerido:
-                                🌱 **Especie Vegetal:** (Nombre común y científico)
-                                🔍 **Observaciones Foliares:** (Síntomas visuales, manchas, coloración o presencia de insectos)
-                                📊 **Estado de la Muestra:** (Normal, Leve, Moderado o Severo)
-                                💡 **Manejo Agronómico Recomendado:** (Tratamientos orgánicos o cuidados del cultivo)
-                                🛡️ **Medidas Preventivas:** (Riego, nutrición y ventilación)
+                                REGLAS DE IDENTIFICACIÓN OBLIGATORIAS:
+                                1. Jamás respondas "No se puede identificar" o "Desconocido".
+                                2. Si la hoja no es 100% clara, DEBES deducir la especie vegetal más probable según la forma de la hoja, la textura, las nervaduras y el tipo de plaga/oruga presente (ej. Maíz, Sorgo, Caña, Tomate, etc.).
+                                3. Identifica la plaga u oruga específica si está presente (ej. Gusano Cogollero - Spodoptera frugiperda).
+
+                                Responde ESTRICTAMENTE con este formato de Markdown:
+
+                                🌱 **Especie Vegetal:** [Nombre común y científico más probable de la planta]
+                                🐛 **Plaga / Patógeno Detectado:** [Nombre común y científico del insecto/daño visualizado]
+                                🔍 **Observaciones Foliares:** [Descripción clara de los síntomas y daños en la hoja]
+                                📊 **Estado de la Muestra:** [Leve, Moderado o Severo]
+                                💡 **Manejo Agronómico Recomendado:** [Tratamiento orgánico o químico específico para esta plaga y cultivo]
+                                🛡️ **Medidas Preventivas:** [Cuidados de riego, suelo y ventilación]
                                 """
 
                                 response = client.chat.completions.create(
@@ -568,16 +573,17 @@ else:
                                     messages=[
                                         {
                                             "role": "system",
-                                            "content": "Eres un software de visión artificial para la catalogación e identificación de plantas agrícolas y jardinería."
+                                            "content": "Eres un agrónomo experto en diagnóstico de cultivos y control de plagas agrícolas. Tu objetivo es siempre dar un diagnóstico definitivo y preciso, identificando la planta y la plaga sin dudar."
                                         },
                                         {
                                             "role": "user",
                                             "content": [
                                                 {"type": "text", "text": prompt_analisis},
-                                                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}", "detail": "auto"}}
+                                                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}", "detail": "high"}}
                                             ]
                                         }
                                     ],
+                                    temperature=0.2,
                                     max_tokens=1000
                                 )
 

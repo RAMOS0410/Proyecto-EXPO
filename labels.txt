@@ -1,0 +1,6 @@
+0 Cafe Sano
+1 Cafe Roya
+2 Frijol Sano
+3 Frijol Gusano Pulgon
+4 Maiz Sano
+5 Maiz Gusano Cogollero
