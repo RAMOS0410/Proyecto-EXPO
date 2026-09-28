@@ -4,6 +4,7 @@ import io
 import base64
 import sqlite3
 import secrets
+import re
 import pandas as pd
 from PIL import Image
 from openai import OpenAI
@@ -367,17 +368,16 @@ def agregar_mensaje_chat_firestore(doc_id, role, content):
     })
 
 def obtener_historial_firestore(usuario):
-    docs = (
-        db_firestore.collection("historial_cultivos")
-        .where("usuario", "==", usuario)
-        .order_by("fecha", direction=firestore.Query.DESCENDING)
-        .stream()
-    )
+    # Consulta simple sin order_by en la DB para evitar requerir un índice en Firebase
+    docs = db_firestore.collection("historial_cultivos").where("usuario", "==", usuario).stream()
     resultados = []
     for doc in docs:
         data = doc.to_dict()
         data["id"] = doc.id
         resultados.append(data)
+    
+    # Ordenamiento seguro en memoria mediante Python
+    resultados.sort(key=lambda x: x.get("fecha") if x.get("fecha") is not None else 0, reverse=True)
     return resultados
 
 inject_pwa()
@@ -494,7 +494,7 @@ else:
         st.markdown("## Historial de Diagnósticos")
 
         if not firebase_ok:
-            st.info("Aún no has realizado diagnósticos. Selecciona 'Detectar Plaga' en el menú lateral para evaluar una muestra.")
+            st.error("Error de conexión con Firebase. Revisa tus credenciales en Secrets.")
         else:
             try:
                 historial = obtener_historial_firestore(st.session_state.usuario)
@@ -502,8 +502,8 @@ else:
                 if historial:
                     for registro in historial:
                         fecha = registro.get("fecha")
-                        fecha_str = fecha.strftime("%d/%m/%Y %H:%M") if fecha else "Fecha no disponible"
-                        cultivo = registro.get("cultivo", "Diagnóstico")
+                        fecha_str = fecha.strftime("%d/%m/%Y %H:%M") if hasattr(fecha, 'strftime') else "Fecha reciente"
+                        cultivo = registro.get("cultivo", "Cultivo Identificado")
 
                         with st.expander(f"🌿 {cultivo} — {fecha_str}"):
                             col_img, col_texto = st.columns([1, 1.5])
@@ -526,7 +526,7 @@ else:
                 else:
                     st.info("Aún no has realizado diagnósticos. Selecciona 'Detectar Plaga' en el menú lateral para evaluar una muestra.")
             except Exception as e:
-                st.info("Aún no has realizado diagnósticos. Selecciona 'Detectar Plaga' en el menú lateral para evaluar una muestra.")
+                st.error(f"Error al obtener el historial: {e}")
 
     elif opcion == "Detectar Plaga":
         st.title("Nuevo Diagnóstico Agrícola")
@@ -606,22 +606,29 @@ else:
                                 st.session_state.ultimo_analisis = resultado
                                 st.session_state.chat_plaga_historial = []
 
+                                # Extraer nombre del cultivo para la vista del historial
+                                cultivo_detectado = "Cultivo / Diagnóstico"
+                                match_planta = re.search(r"🌱 \*\*Especie Vegetal:\*\*\s*(.*)", resultado)
+                                if match_planta:
+                                    cultivo_detectado = match_planta.group(1).strip()
+
                                 if firebase_ok:
                                     try:
                                         imagen_url = subir_imagen_firebase(img, st.session_state.usuario)
                                         doc_id = crear_diagnostico_firestore(
                                             usuario=st.session_state.usuario,
-                                            cultivo="Análisis Foliar",
+                                            cultivo=cultivo_detectado,
                                             diagnostico=resultado,
                                             imagen_url=imagen_url
                                         )
                                         st.session_state.diag_doc_id = doc_id
+                                        st.success("¡Diagnóstico procesado y guardado con éxito!")
                                     except Exception as e:
                                         st.session_state.diag_doc_id = None
-                                        st.warning(f"El diagnóstico se generó, pero no se pudo guardar en Firebase: {e}")
+                                        st.warning(f"Error al guardar en Firebase: {e}")
                                 else:
                                     st.session_state.diag_doc_id = None
-                                    st.warning("Firebase no está configurado; el diagnóstico no se guardó en el historial.")
+                                    st.warning("Firebase no conectado.")
 
                             except Exception as e:
                                 st.error(f"Error durante el procesamiento: {e}")
