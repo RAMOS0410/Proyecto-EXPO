@@ -27,14 +27,14 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ESTILOS CSS REFORZADOS (INYECCIÓN DIRECCIÓN A NIVELES DE DOM) ---
+# --- ESTILOS CSS REFORZADOS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
     /* FONDO PRINCIPAL MENTA SUAVE */
     html, body, [data-testid="stAppViewContainer"], .stApp {
-        background-color: #F4F9F5 !important;
+        background-color: #F8FAF7 !important;
         color: #1B4332 !important;
         font-family: 'Inter', sans-serif !important;
     }
@@ -48,67 +48,67 @@ st.markdown("""
     [data-testid="stMarkdownContainer"] h1, 
     [data-testid="stMarkdownContainer"] h2, 
     [data-testid="stMarkdownContainer"] h3 {
-        color: #0E382B !important;
+        color: #143D2B !important;
         font-family: 'Poppins', sans-serif !important;
         font-weight: 800 !important;
     }
 
     .stApp p, .stApp span, .stApp label, [data-testid="stMarkdownContainer"] p {
-        color: #2D5A42 !important;
+        color: #556B60 !important;
     }
 
-    /* BARRA LATERAL VERDE BOSQUE FORZADA */
+    /* BARRA LATERAL VERDE BOSQUE */
     section[data-testid="stSidebar"], [data-testid="stSidebar"] > div:first-child {
         background-color: #1B4D3E !important;
     }
 
-    section[data-testid="stSidebar"] h1, 
-    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h1 {
-        color: #FFFFFF !important;
-        font-family: 'Poppins', sans-serif !important;
-        font-weight: 700 !important;
+    /* OCULTAR ESPACIADO INTERNO DEL SIDEBAR PARA ALINEAR BANDERAS */
+    section[data-testid="stSidebar"] .block-container {
+        padding-top: 2rem !important;
+        padding-left: 1.2rem !important;
+        padding-right: 1.2rem !important;
     }
 
-    section[data-testid="stSidebar"] p, 
-    section[data-testid="stSidebar"] span {
-        color: #B2D8C6 !important;
-    }
-
-    section[data-testid="stSidebar"] hr {
-        border-color: rgba(255, 255, 255, 0.15) !important;
-    }
-
-    /* BOTONES DE LA NAVEGACIÓN LATERAL (ESTILO PÍLDORA) */
+    /* ESTILO PÍLDORA BOTONES SIDEBAR */
     section[data-testid="stSidebar"] .stButton > button {
         background-color: #FFFFFF !important;
         color: #1B4D3E !important;
-        border-radius: 25px !important;
+        border-radius: 12px !important;
         border: none !important;
         font-family: 'Poppins', sans-serif !important;
         font-weight: 700 !important;
-        padding: 0.6rem 1.2rem !important;
-        margin-bottom: 8px !important;
-        box-shadow: 0px 3px 6px rgba(0,0,0,0.12) !important;
+        font-size: 14px !important;
+        padding: 0.55rem 1rem !important;
+        margin-bottom: 6px !important;
+        box-shadow: 0px 2px 5px rgba(0,0,0,0.15) !important;
         text-align: left !important;
-        justify-content: flex-start !important;
         display: flex !important;
+        justify-content: flex-start !important;
         align-items: center !important;
+        width: 100% !important;
     }
 
-    /* BOTÓN SELECCIONADO (VERDE CLARO PASTEL) */
-    section[data-testid="stSidebar"] .stButton > button.nav-active {
+    /* ESTADO ACTIVO SELECCIONADO */
+    section[data-testid="stSidebar"] .stButton > button.nav-btn-active {
         background-color: #D2EBD9 !important;
-        color: #0E382B !important;
+        color: #143D2B !important;
         font-weight: 800 !important;
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.2) !important;
     }
 
     section[data-testid="stSidebar"] .stButton > button:hover {
         background-color: #EBF7EE !important;
-        color: #0E382B !important;
+        color: #143D2B !important;
     }
 
-    /* BOTONES DE ACCIÓN PRINCIPALES EN EL ÁREA CENTRAL */
+    /* ESTILO ALERTA CELESTE DE HISTORIAL VACÍO */
+    .stAlert {
+        background-color: #E3F2FD !important;
+        color: #1E3A8A !important;
+        border-radius: 8px !important;
+        border: none !important;
+    }
+
+    /* BOTONES DE ACCIÓN ÁREA CENTRAL */
     .main .stButton > button {
         background-color: #1B4D3E !important;
         color: #FFFFFF !important;
@@ -435,11 +435,19 @@ if not st.session_state.autenticado:
 
 # --- PANEL PRINCIPAL ---
 else:
-    st.sidebar.title("AGRO IA 🌿")
-    st.sidebar.caption(f"Usuario activo: {st.session_state.usuario}")
-    st.sidebar.write("---")
+    # ENCABEZADO DE LA BARRA LATERAL
+    st.sidebar.markdown(
+        """
+        <div style="margin-bottom: 20px;">
+            <h1 style="color: white; margin: 0; font-size: 26px; font-weight: 800; font-family: 'Poppins', sans-serif;">AGRO IA 🌿</h1>
+            <p style="color: #A0C4B8; margin: 4px 0 0 0; font-size: 13px;">Usuario activo: """ + str(st.session_state.usuario) + """</p>
+        </div>
+        <hr style="border: 0.5px solid rgba(255,255,255,0.2); margin-bottom: 20px;">
+        """,
+        unsafe_allow_html=True
+    )
 
-    # --- BOTONES DE NAVEGACIÓN PERSONALIZADOS EN LUGAR DE RADIO ---
+    # NAVEGACIÓN CON FORMATO EXACTO A LA IMAGEN
     opciones = [
         ("🏠 Inicio e Historial", "Inicio e Historial"),
         ("🐛 Detectar Plaga", "Detectar Plaga"),
@@ -449,19 +457,32 @@ else:
 
     for label_btn, clave in opciones:
         is_active = st.session_state.opcion_nav == clave
-        btn_class = "nav-active" if is_active else ""
         
-        # Inyección dinámica de clase CSS
-        if st.sidebar.button(f"{'🔘 ' if is_active else '⚪ '}{label_btn}", key=f"nav_{clave}", use_container_width=True):
+        # Círculo activo (rojo/verde pastel) o inactivo
+        bullet = "🔴" if is_active else "⚫"
+        active_class = "nav-btn-active" if is_active else ""
+        
+        # Inyección CSS específica para la píldora activa
+        if is_active:
+            st.sidebar.markdown("""
+                <style>
+                div[data-testid="stSidebar"] div.stButton:nth-child(n) button {
+                    background-color: #D2EBD9 !important;
+                }
+                </style>
+            """, unsafe_allow_html=True)
+
+        if st.sidebar.button(f"{bullet} {label_btn}", key=f"nav_{clave}", use_container_width=True):
             st.session_state.opcion_nav = clave
             st.rerun()
 
     opcion = st.session_state.opcion_nav
 
     if opcion == "Inicio e Historial":
-        st.title(f"¡Bienvenido, {st.session_state.nombre_completo}! 🌿")
-        st.caption("Resumen y registro de los diagnósticos aplicados a tus cultivos.")
-        st.subheader("Historial de Diagnósticos")
+        st.markdown(f"# ¡Bienvenido, {st.session_state.nombre_completo}! 🌿")
+        st.markdown("<p style='color: #6B7280; margin-top: -15px; margin-bottom: 25px;'>Resumen y registro de los diagnósticos aplicados a tus cultivos.</p>", unsafe_allow_html=True)
+        
+        st.markdown("## Historial de Diagnósticos")
 
         if not firebase_ok:
             st.info("Aún no has realizado diagnósticos. Selecciona 'Detectar Plaga' en el menú lateral para evaluar una muestra.")
@@ -641,7 +662,7 @@ else:
                             if firebase_ok and st.session_state.get("diag_doc_id"):
                                 try:
                                     agregar_mensaje_chat_firestore(st.session_state.diag_doc_id, "assistant", respuesta_bot)
-                                except Exception:
+                                mexcet Exception:
                                     pass
 
                             st.rerun()
