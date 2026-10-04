@@ -533,6 +533,7 @@ else:
                                 📊 **Estado de la Muestra:** [Leve, Moderado o Severo]
                                 💡 **Manejo Agronómico Recomendado:** [Tratamiento orgánico o químico específico para esta plaga y cultivo]
                                 🛡️ **Medidas Preventivas:** [Cuidados de riego, suelo y ventilación]
+                                📚 **Fuentes y Referencias Consultadas:** [Incluye de 2 a 3 citas o nombres de entidades agronómicas e institucionales de investigación reconocidas (por ejemplo: CENTA El Salvador, FAO, OIRSA, UC IPM, Embrapa, etc.) que respalden el diagnóstico y el tratamiento de esta afección]
                                 """
 
                                 response = client.chat.completions.create(
@@ -540,7 +541,7 @@ else:
                                     messages=[
                                         {
                                             "role": "system",
-                                            "content": "Eres un agrónomo experto en diagnóstico de cultivos y control de plagas agrícolas. Tu objetivo es siempre dar un diagnóstico definitivo y preciso, identificando la planta y la plaga sin dudar."
+                                            "content": "Eres un agrónomo experto en diagnóstico de cultivos y control de plagas agrícolas. Tu objetivo es siempre dar un diagnóstico definitivo y preciso, identificando la planta y la plaga sin dudar, respaldando siempre tus recomendaciones con fuentes bibliográficas agronómicas e institucionales reconocidas."
                                         },
                                         {
                                             "role": "user",
